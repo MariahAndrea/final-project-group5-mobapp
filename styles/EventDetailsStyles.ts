@@ -5,23 +5,27 @@ export const createDetailsStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: 20,
       backgroundColor: theme.background,
+    },
+    contentContainer: {
+      padding: 20,
+      paddingTop: 54,
+      paddingBottom: 36,
     },
     header: {
       fontSize: 28,
-      fontWeight: "700",
+      fontWeight: "800",
       color: theme.text,
-      marginBottom: 24,
+      flex: 1,
+      marginRight: 12,
     },
     sectionLabel: {
-      fontSize: 14,
-      fontWeight: "600",
+      fontSize: 12,
+      fontWeight: "800",
       color: theme.textSecondary,
       textTransform: "uppercase",
       marginTop: 20,
       marginBottom: 8,
-      letterSpacing: 0.5,
     },
     text: {
       fontSize: 16,
@@ -36,11 +40,16 @@ export const createDetailsStyles = (theme: Theme) =>
     },
     detailsCard: {
       backgroundColor: theme.surface,
-      padding: 16,
-      borderRadius: 10,
+      padding: 18,
+      borderRadius: 8,
       marginBottom: 16,
-      borderLeftWidth: 4,
-      borderLeftColor: theme.primary,
+      borderWidth: 1,
+      borderColor: theme.border,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      elevation: 2,
     },
     dateTimeContainer: {
       flexDirection: "row",
@@ -64,8 +73,8 @@ export const createDetailsStyles = (theme: Theme) =>
     },
     editButton: {
       backgroundColor: theme.primary,
-      paddingVertical: 14,
-      borderRadius: 10,
+      paddingVertical: 15,
+      borderRadius: 8,
       alignItems: "center",
     },
     editButtonText: {
@@ -75,8 +84,8 @@ export const createDetailsStyles = (theme: Theme) =>
     },
     deleteButton: {
       backgroundColor: "#FF6B6B",
-      paddingVertical: 14,
-      borderRadius: 10,
+      paddingVertical: 15,
+      borderRadius: 8,
       alignItems: "center",
     },
     deleteButtonText: {

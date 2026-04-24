@@ -9,15 +9,15 @@ export const createHomeStyles = (theme: Theme) =>
     },
     header: {
       paddingHorizontal: 20,
-      paddingTop: 24,
-      paddingBottom: 18,
+      paddingTop: 54,
+      paddingBottom: 20,
       backgroundColor: theme.surface,
       borderBottomWidth: 0,
       shadowColor: theme.shadowColor,
-      shadowOpacity: 0.08,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 5 },
-      elevation: 5,
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 4,
     },
     headerTop: {
       flexDirection: "row",
@@ -26,7 +26,7 @@ export const createHomeStyles = (theme: Theme) =>
       marginBottom: 16,
     },
     headerTitle: {
-      fontSize: 30,
+      fontSize: 32,
       fontWeight: "800",
       color: theme.text,
       marginBottom: 4,
@@ -34,9 +34,9 @@ export const createHomeStyles = (theme: Theme) =>
     headerDescription: {
       fontSize: 14,
       color: theme.textSecondary,
-      lineHeight: 20,
+      lineHeight: 21,
       marginBottom: 8,
-      maxWidth: 280,
+      maxWidth: 300,
     },
     headerActions: {
       flexDirection: "row",
@@ -49,9 +49,9 @@ export const createHomeStyles = (theme: Theme) =>
     createButton: {
       backgroundColor: theme.primary,
       paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingVertical: 12,
       borderRadius: 8,
-      marginRight: 8,
+      flex: 1,
     },
     createButtonText: {
       color: "#FFFFFF",
@@ -62,12 +62,36 @@ export const createHomeStyles = (theme: Theme) =>
     themeButton: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: 8,
       backgroundColor: theme.surface,
       justifyContent: "center",
       alignItems: "center",
       borderWidth: 1,
       borderColor: theme.border,
+    },
+    primaryActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    secondaryButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    secondaryButtonText: {
+      color: theme.primary,
+      fontWeight: "700",
+      textAlign: "center",
+      fontSize: 14,
+      marginLeft: 6,
     },
     emptyContainer: {
       flex: 1,
@@ -89,5 +113,6 @@ export const createHomeStyles = (theme: Theme) =>
     listContent: {
       paddingHorizontal: 16,
       paddingVertical: 16,
+      paddingBottom: 28,
     },
   });

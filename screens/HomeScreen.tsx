@@ -56,12 +56,21 @@ export default function HomeScreen({ navigation }: any) {
             />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={homeStyles.createButton}
-          onPress={() => navigation.navigate("Create")}
-        >
-          <Text style={homeStyles.createButtonText}>+ Add Event</Text>
-        </TouchableOpacity>
+        <View style={homeStyles.primaryActions}>
+          <TouchableOpacity
+            style={homeStyles.secondaryButton}
+            onPress={() => navigation.navigate("Calendar")}
+          >
+            <MaterialCommunityIcons name="calendar-month" size={18} color={theme.primary} />
+            <Text style={homeStyles.secondaryButtonText}>Calendar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={homeStyles.createButton}
+            onPress={() => navigation.navigate("Create")}
+          >
+            <Text style={homeStyles.createButtonText}>+ Add Event</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {events.length === 0 ? (

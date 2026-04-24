@@ -39,49 +39,70 @@ export default function EventDetailsScreen({ route, navigation }: any) {
 
   const eventDate = new Date(event.date);
   const dateString = eventDate.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
     month: "long",
     day: "numeric",
+    year: "numeric",
   });
   const timeString = eventDate.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
   });
+  const endTimeString = event.endTime ? new Date(event.endTime).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }) : null;
 
   return (
-    <ScrollView style={detailsStyles.container}>
+    <ScrollView
+      style={detailsStyles.container}
+      contentContainerStyle={detailsStyles.contentContainer}
+    >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <Text style={detailsStyles.header}>{event.name}</Text>
+        <Text style={detailsStyles.header} numberOfLines={2}>{event.name}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="close" size={28} color={theme.text} />
         </TouchableOpacity>
       </View>
 
       <View style={detailsStyles.detailsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <MaterialCommunityIcons
             name="map-marker"
             size={20}
             color={theme.primary}
             style={{ marginRight: 10 }}
           />
-          <Text style={detailsStyles.text}>{event.venue}</Text>
+          <Text style={detailsStyles.text} numberOfLines={3}>{event.venue}</Text>
         </View>
       </View>
 
-      <Text style={detailsStyles.sectionLabel}>Date & Time</Text>
+      <Text style={detailsStyles.sectionLabel}>Date</Text>
       <View style={detailsStyles.detailsCard}>
-        <View style={detailsStyles.dateTimeContainer}>
-          <View style={{ flex: 1 }}>
-            <Text style={detailsStyles.textSecondary}>Date</Text>
-            <Text style={detailsStyles.dateText}>{dateString}</Text>
-          </View>
-          <View>
-            <Text style={detailsStyles.textSecondary}>Time</Text>
-            <Text style={detailsStyles.timeText}>{timeString}</Text>
-          </View>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <MaterialCommunityIcons
+            name="calendar"
+            size={20}
+            color={theme.primary}
+            style={{ marginRight: 10 }}
+          />
+          <Text style={detailsStyles.dateText} numberOfLines={2}>{dateString}</Text>
+        </View>
+      </View>
+
+      <Text style={detailsStyles.sectionLabel}>Time</Text>
+      <View style={detailsStyles.detailsCard}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <MaterialCommunityIcons
+            name="clock-outline"
+            size={20}
+            color={theme.primary}
+            style={{ marginRight: 10 }}
+          />
+          <Text style={detailsStyles.timeText} numberOfLines={1}>
+            {timeString}{endTimeString ? ` - ${endTimeString}` : ''}
+          </Text>
         </View>
       </View>
 
@@ -94,7 +115,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
             color={theme.primary}
             style={{ marginRight: 10 }}
           />
-          <Text style={detailsStyles.text}>
+          <Text style={detailsStyles.text} numberOfLines={2}>
             {event.guests} {event.guests === 1 ? "guest" : "guests"} attending
           </Text>
         </View>
@@ -115,7 +136,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
             color={theme.primary}
             style={{ marginRight: 10 }}
           />
-          <Text style={detailsStyles.text}>
+          <Text style={detailsStyles.text} numberOfLines={1}>
             {event.status === "pending"
               ? "Pending"
               : event.status === "confirmed"
@@ -124,6 +145,23 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           </Text>
         </View>
       </View>
+
+      {event.description && (
+        <>
+          <Text style={detailsStyles.sectionLabel}>Description</Text>
+          <View style={detailsStyles.detailsCard}>
+            <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+              <MaterialCommunityIcons
+                name="text"
+                size={20}
+                color={theme.primary}
+                style={{ marginRight: 10, marginTop: 2 }}
+              />
+              <Text style={detailsStyles.text} numberOfLines={5}>{event.description}</Text>
+            </View>
+          </View>
+        </>
+      )}
 
       <View style={detailsStyles.buttonContainer}>
         <TouchableOpacity
