@@ -9,7 +9,7 @@ function AppContent() {
   const { theme } = useContext(ThemeContext);
   return (
     <>
-      <StatusBar barStyle={theme.statusBar as any} />
+      <StatusBar style={theme.statusBar as any} />
       <NavigationContainer>
         <AppNavigator />
       </NavigationContainer>

@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: "center",
   },
   actionText: {

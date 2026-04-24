@@ -27,23 +27,55 @@ const InputField = ({ label, placeholder, value, onChangeText, keyboardType = "d
 );
 
 export default function CreateEventScreen({ navigation }: any) {
-  const { addEvent } = useContext(EventContext);
+  const { events, addEvent } = useContext(EventContext);
   const { theme } = useContext(ThemeContext);
 
   const [name, setName] = useState("");
   const [venue, setVenue] = useState("");
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [guests, setGuests] = useState("");
+  const [description, setDescription] = useState("");
   const [results, setResults] = useState<LocationResult[]>([]);
-  const [searchTimeout, setSearchTimeout] = useState<number | null>(null);
+  const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
   const [tempTime, setTempTime] = useState<Date | null>(null);
+  const [tempEndTime, setTempEndTime] = useState<Date | null>(null);
 
   const createStyles = useMemo(() => createCreateEventStyles(theme), [theme]);
+
+  const getDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const checkForOverlappingEvents = (eventDate: Date, eventEndTime: Date) => {
+    return events.filter((existingEvent) => {
+      const existingDate = new Date(existingEvent.date);
+      const existingEndTime = existingEvent.endTime ? new Date(existingEvent.endTime) : null;
+
+      // Check if dates match using a more reliable format
+      if (getDateString(existingDate) !== getDateString(eventDate)) {
+        return false;
+      }
+
+      // Check for time overlap
+      const eventStart = eventDate.getTime();
+      const eventEnd = eventEndTime.getTime();
+      const existingStart = existingDate.getTime();
+      const existingEnd = existingEndTime ? existingEndTime.getTime() : existingStart + (60 * 60 * 1000); // Default 1 hour if no end time
+
+      // Check if time ranges overlap
+      return (eventStart < existingEnd && eventEnd > existingStart);
+    });
+  };
 
   const isFormValid = () => {
     return (
@@ -51,6 +83,7 @@ export default function CreateEventScreen({ navigation }: any) {
       venue.trim().length > 0 &&
       date !== null &&
       time !== null &&
+      endTime !== null &&
       guests.trim().length > 0 &&
       !isNaN(Number(guests)) &&
       Number(guests) > 0
@@ -68,9 +101,38 @@ export default function CreateEventScreen({ navigation }: any) {
       eventDate.setHours(time.getHours(), time.getMinutes());
     }
 
+    // Create proper end time with correct date
+    const eventEndTime = new Date(eventDate);
+    eventEndTime.setHours(endTime!.getHours(), endTime!.getMinutes());
+
+    // Check for overlapping events
+    const overlappingEvents = checkForOverlappingEvents(eventDate, eventEndTime);
+    if (overlappingEvents.length > 0) {
+      const eventNames = overlappingEvents.map(e => e.name).join(", ");
+      Alert.alert(
+        "Overlapping Events Not Allowed",
+        `Cannot create event: it overlaps with the following existing events: ${eventNames}`
+      );
+      return;
+    }
+
+    proceedWithCreate(eventDate, eventEndTime);
+  };
+
+  const proceedWithCreate = (eventDate: Date, eventEndTime: Date) => {
+    const endTimeString = endTime ? endTime.toLocaleTimeString("en-US", {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }) : null;
+
     Alert.alert(
       "Confirm Event Details",
-      `Event: ${name}\nVenue: ${venue}\nDate: ${eventDate.toDateString()}\nTime: ${eventDate.toLocaleTimeString()}\nGuests: ${guests}\n\nAre these details correct?`,
+      `Event: ${name}\nVenue: ${venue}\nDate: ${eventDate.toDateString()}\nTime: ${eventDate.toLocaleTimeString("en-US", {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })}${endTimeString ? ` - ${endTimeString}` : ''}\nGuests: ${guests}${description ? `\nDescription: ${description}` : ''}\n\nAre these details correct?`,
       [
         {
           text: "Cancel",
@@ -88,6 +150,8 @@ export default function CreateEventScreen({ navigation }: any) {
               guests: Number(guests),
               latitude: 0,
               longitude: 0,
+              description: description.trim() || undefined,
+              endTime: eventEndTime.toISOString(),
               status: "pending",
             });
             navigation.goBack();
@@ -163,6 +227,19 @@ export default function CreateEventScreen({ navigation }: any) {
     }
   };
 
+  const handleEndTimeChange = (_: DateTimePickerEvent, selectedTime?: Date) => {
+    if (Platform.OS === 'android') {
+      if (selectedTime) {
+        setEndTime(selectedTime);
+      }
+      setShowEndTimePicker(false);
+    } else {
+      if (selectedTime) {
+        setTempEndTime(selectedTime);
+      }
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={createStyles.container}
@@ -182,6 +259,15 @@ export default function CreateEventScreen({ navigation }: any) {
           placeholder="Enter event name"
           value={name}
           onChangeText={setName}
+          theme={theme}
+          createStyles={createStyles}
+        />
+
+        <InputField
+          label="Description (Optional)"
+          placeholder="Enter event description"
+          value={description}
+          onChangeText={setDescription}
           theme={theme}
           createStyles={createStyles}
         />
@@ -259,20 +345,44 @@ export default function CreateEventScreen({ navigation }: any) {
 
         <View style={{ marginBottom: 16 }}>
           <Text style={createStyles.label}>Time</Text>
-          <TouchableOpacity
-            onPress={() => {
-              setTempTime(time);
-              setShowTimePicker(true);
-            }}
-            style={[createStyles.input, { justifyContent: "center", paddingVertical: 16 }]}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <MaterialCommunityIcons name="clock" size={20} color={theme.primary} style={{ marginRight: 10 }} />
-              <Text style={{ color: time ? theme.text : theme.textSecondary, fontSize: 16 }}>
-                {time ? time.toLocaleTimeString() : "Pick a time"}
-              </Text>
-            </View>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <TouchableOpacity
+              onPress={() => {
+                setTempTime(time);
+                setShowTimePicker(true);
+              }}
+              style={[createStyles.input, { flex: 1, marginRight: 8, justifyContent: "center", paddingVertical: 16 }]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialCommunityIcons name="clock" size={20} color={theme.primary} style={{ marginRight: 10 }} />
+                <Text style={{ color: time ? theme.text : theme.textSecondary, fontSize: 16 }}>
+                  {time ? time.toLocaleTimeString("en-US", {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }) : "Start time"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setTempEndTime(endTime);
+                setShowEndTimePicker(true);
+              }}
+              style={[createStyles.input, { flex: 1, marginLeft: 8, justifyContent: "center", paddingVertical: 16 }]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialCommunityIcons name="clock-outline" size={20} color={theme.primary} style={{ marginRight: 10 }} />
+                <Text style={{ color: endTime ? theme.text : theme.textSecondary, fontSize: 16 }}>
+                  {endTime ? endTime.toLocaleTimeString("en-US", {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }) : "End time"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
           {showTimePicker && (
             <DateTimePicker
               value={Platform.OS === 'ios' ? (tempTime || new Date()) : (time || new Date())}
@@ -287,6 +397,26 @@ export default function CreateEventScreen({ navigation }: any) {
               onPress={() => {
                 if (tempTime) setTime(tempTime);
                 setShowTimePicker(false);
+              }}
+              style={[createStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
+            >
+              <Text style={{ color: "#FFFFFF", fontWeight: "600", textAlign: "center" }}>Done</Text>
+            </TouchableOpacity>
+          )}
+          {showEndTimePicker && (
+            <DateTimePicker
+              value={Platform.OS === 'ios' ? (tempEndTime || new Date()) : (endTime || new Date())}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "clock"}
+              textColor={theme.primary}
+              onChange={handleEndTimeChange}
+            />
+          )}
+          {Platform.OS === 'ios' && showEndTimePicker && (
+            <TouchableOpacity
+              onPress={() => {
+                if (tempEndTime) setEndTime(tempEndTime);
+                setShowEndTimePicker(false);
               }}
               style={[createStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
             >
@@ -312,9 +442,10 @@ export default function CreateEventScreen({ navigation }: any) {
         >
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
             <MaterialCommunityIcons name="check" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Text style={createStyles.buttonText}>Save Event</Text>
+            <Text style={createStyles.buttonText}>Create Event</Text>
           </View>
         </TouchableOpacity>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );

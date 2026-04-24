@@ -37,14 +37,18 @@ export default function EditEventScreen({ route, navigation }: any) {
   const [venue, setVenue] = useState(event?.venue || "");
   const [date, setDate] = useState<Date | null>(event?.date ? new Date(event.date) : null);
   const [time, setTime] = useState<Date | null>(event?.date ? new Date(event.date) : null);
+  const [endTime, setEndTime] = useState<Date | null>(event?.endTime ? new Date(event.endTime) : null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [guests, setGuests] = useState(String(event?.guests || ""));
+  const [description, setDescription] = useState(event?.description || "");
   const [results, setResults] = useState<LocationResult[]>([]);
-  const [searchTimeout, setSearchTimeout] = useState<number | null>(null);
+  const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
   const [tempTime, setTempTime] = useState<Date | null>(null);
+  const [tempEndTime, setTempEndTime] = useState<Date | null>(null);
 
   const isFormValid = () => {
     return (
@@ -52,6 +56,7 @@ export default function EditEventScreen({ route, navigation }: any) {
       venue.trim().length > 0 &&
       date !== null &&
       time !== null &&
+      endTime !== null &&
       guests.trim().length > 0 &&
       !isNaN(Number(guests)) &&
       Number(guests) > 0
@@ -69,9 +74,38 @@ export default function EditEventScreen({ route, navigation }: any) {
       eventDate.setHours(time.getHours(), time.getMinutes());
     }
 
+    // Create proper end time with correct date
+    const eventEndTime = new Date(eventDate);
+    eventEndTime.setHours(endTime!.getHours(), endTime!.getMinutes());
+
+    // Check for overlapping events (excluding the current event being edited)
+    const overlappingEvents = checkForOverlappingEvents(eventDate, eventEndTime, event?.id);
+    if (overlappingEvents.length > 0) {
+      const eventNames = overlappingEvents.map(e => e.name).join(", ");
+      Alert.alert(
+        "Overlapping Events Not Allowed",
+        `Cannot update event: it overlaps with the following existing events: ${eventNames}`
+      );
+      return;
+    }
+
+    proceedWithUpdate(eventDate, eventEndTime);
+  };
+
+  const proceedWithUpdate = (eventDate: Date, eventEndTime: Date) => {
+    const endTimeString = endTime ? endTime.toLocaleTimeString("en-US", {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }) : null;
+
     Alert.alert(
       "Confirm Event Changes",
-      `Event: ${name}\nVenue: ${venue}\nDate: ${eventDate.toDateString()}\nTime: ${eventDate.toLocaleTimeString()}\nGuests: ${guests}\n\nAre these changes correct?`,
+      `Event: ${name}\nVenue: ${venue}\nDate: ${eventDate.toDateString()}\nTime: ${eventDate.toLocaleTimeString("en-US", {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })}${endTimeString ? ` - ${endTimeString}` : ''}\nGuests: ${guests}${description ? `\nDescription: ${description}` : ''}\n\nAre these changes correct?`,
       [
         {
           text: "Cancel",
@@ -89,6 +123,8 @@ export default function EditEventScreen({ route, navigation }: any) {
               guests: Number(guests),
               latitude: event?.latitude ?? 0,
               longitude: event?.longitude ?? 0,
+              description: description.trim() || undefined,
+              endTime: eventEndTime.toISOString(),
             });
             navigation.goBack();
           },
@@ -163,9 +199,55 @@ export default function EditEventScreen({ route, navigation }: any) {
     }
   };
 
+  const handleEndTimeChange = (_: DateTimePickerEvent, selectedTime?: Date) => {
+    if (Platform.OS === 'android') {
+      if (selectedTime) {
+        setEndTime(selectedTime);
+      }
+      setShowEndTimePicker(false);
+    } else {
+      if (selectedTime) {
+        setTempEndTime(selectedTime);
+      }
+    }
+  };
+
   if (!event) return null;
 
   const editStyles = useMemo(() => createEditEventStyles(theme), [theme]);
+
+  const getDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const checkForOverlappingEvents = (eventDate: Date, eventEndTime: Date, excludeEventId?: string) => {
+    return events.filter((existingEvent) => {
+      // Skip the current event being edited
+      if (excludeEventId && existingEvent.id === excludeEventId) {
+        return false;
+      }
+
+      const existingDate = new Date(existingEvent.date);
+      const existingEndTime = existingEvent.endTime ? new Date(existingEvent.endTime) : null;
+
+      // Check if dates match using a more reliable format
+      if (getDateString(existingDate) !== getDateString(eventDate)) {
+        return false;
+      }
+
+      // Check for time overlap
+      const eventStart = eventDate.getTime();
+      const eventEnd = eventEndTime.getTime();
+      const existingStart = existingDate.getTime();
+      const existingEnd = existingEndTime ? existingEndTime.getTime() : existingStart + (60 * 60 * 1000); // Default 1 hour if no end time
+
+      // Check if time ranges overlap
+      return (eventStart < existingEnd && eventEnd > existingStart);
+    });
+  };
 
   return (
     <KeyboardAvoidingView
@@ -186,6 +268,15 @@ export default function EditEventScreen({ route, navigation }: any) {
           placeholder="Enter event name"
           value={name}
           onChangeText={setName}
+          theme={theme}
+          editStyles={editStyles}
+        />
+
+        <InputField
+          label="Description (Optional)"
+          placeholder="Enter event description"
+          value={description}
+          onChangeText={setDescription}
           theme={theme}
           editStyles={editStyles}
         />
@@ -263,20 +354,44 @@ export default function EditEventScreen({ route, navigation }: any) {
 
         <View style={{ marginBottom: 16 }}>
           <Text style={editStyles.label}>Time</Text>
-          <TouchableOpacity
-            onPress={() => {
-              setTempTime(time);
-              setShowTimePicker(true);
-            }}
-            style={[editStyles.input, { justifyContent: "center", paddingVertical: 16 }]}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <MaterialCommunityIcons name="clock" size={20} color={theme.primary} style={{ marginRight: 10 }} />
-              <Text style={{ color: time ? theme.text : theme.textSecondary, fontSize: 16 }}>
-                {time ? time.toLocaleTimeString() : "Pick a time"}
-              </Text>
-            </View>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <TouchableOpacity
+              onPress={() => {
+                setTempTime(time);
+                setShowTimePicker(true);
+              }}
+              style={[editStyles.input, { flex: 1, marginRight: 8, justifyContent: "center", paddingVertical: 16 }]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialCommunityIcons name="clock" size={20} color={theme.primary} style={{ marginRight: 10 }} />
+                <Text style={{ color: time ? theme.text : theme.textSecondary, fontSize: 16 }}>
+                  {time ? time.toLocaleTimeString("en-US", {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }) : "Start time"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setTempEndTime(endTime);
+                setShowEndTimePicker(true);
+              }}
+              style={[editStyles.input, { flex: 1, marginLeft: 8, justifyContent: "center", paddingVertical: 16 }]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialCommunityIcons name="clock-outline" size={20} color={theme.primary} style={{ marginRight: 10 }} />
+                <Text style={{ color: endTime ? theme.text : theme.textSecondary, fontSize: 16 }}>
+                  {endTime ? endTime.toLocaleTimeString("en-US", {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }) : "End time"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
           {showTimePicker && (
             <DateTimePicker
               value={Platform.OS === 'ios' ? (tempTime || new Date()) : (time || new Date())}
@@ -291,6 +406,26 @@ export default function EditEventScreen({ route, navigation }: any) {
               onPress={() => {
                 if (tempTime) setTime(tempTime);
                 setShowTimePicker(false);
+              }}
+              style={[editStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
+            >
+              <Text style={{ color: "#FFFFFF", fontWeight: "600", textAlign: "center" }}>Done</Text>
+            </TouchableOpacity>
+          )}
+          {showEndTimePicker && (
+            <DateTimePicker
+              value={Platform.OS === 'ios' ? (tempEndTime || new Date()) : (endTime || new Date())}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "clock"}
+              textColor={theme.primary}
+              onChange={handleEndTimeChange}
+            />
+          )}
+          {Platform.OS === 'ios' && showEndTimePicker && (
+            <TouchableOpacity
+              onPress={() => {
+                if (tempEndTime) setEndTime(tempEndTime);
+                setShowEndTimePicker(false);
               }}
               style={[editStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
             >

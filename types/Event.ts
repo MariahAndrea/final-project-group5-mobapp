@@ -7,5 +7,6 @@ export type Event = {
   latitude?: number;
   longitude?: number;
   description?: string;
+  endTime: string;
   status: "pending" | "confirmed" | "cancelled";
 };
