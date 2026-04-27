@@ -2,19 +2,23 @@ import { View, Text, FlatList, TouchableOpacity, ScrollView, Alert } from "react
 import { useContext } from "react";
 import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
+import { AuthContext } from "../context/AuthContext";
 import EventCard from "../components/EventCard";
 import { createHomeStyles } from "../styles/HomeScreenStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 export default function HomeScreen({ navigation }: any) {
-  const { events, deleteEvent } = useContext(EventContext);
+  const { visibleEvents, updateEventStatus } = useContext(EventContext);
+  const { currentUser } = useContext(AuthContext);
   const { theme, isDarkMode, toggleTheme } = useContext(ThemeContext);
   const homeStyles = createHomeStyles(theme);
+  const isAdmin = currentUser?.role === "admin";
+  const dashboardEvents = visibleEvents.filter((event) => event.status !== "cancelled");
 
   const handleDeleteEvent = (id: string, eventName: string) => {
     Alert.alert(
-      "Delete Event",
-      `Are you sure you want to cancel the booking for "${eventName}"? This action cannot be undone.`,
+      "Cancel Booking",
+      `Are you sure you want to cancel the booking for "${eventName}"?`,
       [
         {
           text: "Keep",
@@ -22,11 +26,59 @@ export default function HomeScreen({ navigation }: any) {
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: "Cancel Booking",
           onPress: () => {
-            deleteEvent(id);
+            updateEventStatus(id, "cancelled");
           },
           style: "destructive",
+        },
+      ]
+    );
+  };
+
+  const formatBookingDetails = (event: (typeof dashboardEvents)[number]) => {
+    const startDate = new Date(event.date);
+    const endDate = new Date(event.endTime);
+
+    return [
+      `Event: ${event.name}`,
+      `Booked by: ${event.userName}`,
+      `Venue: ${event.venue}`,
+      `Date: ${startDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })}`,
+      `Time: ${startDate.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })} - ${endDate.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })}`,
+      `Guests: ${event.guests}`,
+      event.description ? `Description: ${event.description}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  };
+
+  const confirmAdminStatusChange = (id: string, status: "confirmed" | "cancelled") => {
+    const event = dashboardEvents.find((item) => item.id === id);
+    if (!event) return;
+
+    const actionLabel = status === "confirmed" ? "Confirm Booking" : "Cancel Booking";
+    Alert.alert(
+      actionLabel,
+      `${formatBookingDetails(event)}\n\nDo you want to ${status === "confirmed" ? "confirm" : "cancel"} this booking?`,
+      [
+        { text: "Review Again", style: "cancel" },
+        {
+          text: actionLabel,
+          style: status === "cancelled" ? "destructive" : "default",
+          onPress: () => updateEventStatus(id, status),
         },
       ]
     );
@@ -39,10 +91,12 @@ export default function HomeScreen({ navigation }: any) {
           <View>
             <Text style={homeStyles.headerTitle}>EventEase</Text>
             <Text style={homeStyles.headerDescription}>
-              Create or add an event to keep your schedule organized.
+              {isAdmin
+                ? "Review booking requests and keep availability accurate."
+                : "Create bookings and keep your schedule organized."}
             </Text>
             <Text style={homeStyles.headerSubtitle}>
-              {events.length} {events.length === 1 ? "event" : "events"}
+              {dashboardEvents.length} {dashboardEvents.length === 1 ? "booking" : "bookings"}
             </Text>
           </View>
           <TouchableOpacity
@@ -64,16 +118,18 @@ export default function HomeScreen({ navigation }: any) {
             <MaterialCommunityIcons name="calendar-month" size={18} color={theme.primary} />
             <Text style={homeStyles.secondaryButtonText}>Calendar</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={homeStyles.createButton}
-            onPress={() => navigation.navigate("Create")}
-          >
-            <Text style={homeStyles.createButtonText}>+ Add Event</Text>
-          </TouchableOpacity>
+          {!isAdmin && (
+            <TouchableOpacity
+              style={homeStyles.createButton}
+              onPress={() => navigation.navigate("Create")}
+            >
+              <Text style={homeStyles.createButtonText}>+ Add Event</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      {events.length === 0 ? (
+      {dashboardEvents.length === 0 ? (
         <ScrollView
           contentContainerStyle={{
             flex: 1,
@@ -88,23 +144,25 @@ export default function HomeScreen({ navigation }: any) {
               color={theme.textSecondary}
               style={{ marginBottom: 16 }}
             />
-            <Text style={homeStyles.emptyText}>No events yet</Text>
+            <Text style={homeStyles.emptyText}>No bookings yet</Text>
             <Text style={homeStyles.emptySubtext}>
-              Create your first event to get started
+              {isAdmin ? "New user requests will appear here" : "Create your first booking to get started"}
             </Text>
           </View>
         </ScrollView>
       ) : (
         <FlatList
-          data={events}
+          data={dashboardEvents}
           keyExtractor={(item) => item.id}
           contentContainerStyle={homeStyles.listContent}
           renderItem={({ item }) => (
             <EventCard
               event={item}
               onPress={() => navigation.navigate("Details", { id: item.id })}
-              onEdit={() => navigation.navigate("Edit", { id: item.id })}
+              onEdit={!isAdmin ? () => navigation.navigate("Edit", { id: item.id }) : undefined}
               onDelete={() => handleDeleteEvent(item.id, item.name)}
+              onConfirm={isAdmin ? () => confirmAdminStatusChange(item.id, "confirmed") : undefined}
+              onCancel={isAdmin ? () => confirmAdminStatusChange(item.id, "cancelled") : undefined}
             />
           )}
         />

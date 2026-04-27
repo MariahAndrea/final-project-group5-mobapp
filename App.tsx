@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./navigation/AppNavigator";
 import { EventProvider } from "./context/EventContext";
 import { ThemeProvider, ThemeContext } from "./context/ThemeContext";
+import { AuthProvider } from "./context/AuthContext";
 import { useContext } from "react";
 
 function AppContent() {
@@ -20,9 +21,11 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <EventProvider>
-        <AppContent />
-      </EventProvider>
+      <AuthProvider>
+        <EventProvider>
+          <AppContent />
+        </EventProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

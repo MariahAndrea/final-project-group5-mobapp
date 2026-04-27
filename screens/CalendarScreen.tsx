@@ -5,6 +5,7 @@ import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
 import { Event } from "../types/Event";
 import { createCalendarStyles } from "../styles/CalendarScreenStyles";
+import { getStatusColor } from "../styles/statusColors";
 
 const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -44,21 +45,25 @@ const sortEventsByTime = (events: Event[]) =>
   );
 
 export default function CalendarScreen({ navigation }: any) {
-  const { events } = useContext(EventContext);
+  const { visibleEvents } = useContext(EventContext);
   const { theme } = useContext(ThemeContext);
   const calendarStyles = useMemo(() => createCalendarStyles(theme), [theme]);
+  const calendarEvents = useMemo(
+    () => visibleEvents.filter((event) => event.status !== "cancelled"),
+    [visibleEvents]
+  );
   const todayKey = getDateKey(new Date());
 
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
 
   const eventsByDate = useMemo(() => {
-    return events.reduce<Record<string, Event[]>>((groups, event) => {
+    return calendarEvents.reduce<Record<string, Event[]>>((groups, event) => {
       const key = getDateKey(new Date(event.date));
       groups[key] = groups[key] ? [...groups[key], event] : [event];
       return groups;
     }, {});
-  }, [events]);
+  }, [calendarEvents]);
 
   const calendarDays = useMemo(
     () => getMonthDays(visibleMonth),
@@ -90,7 +95,7 @@ export default function CalendarScreen({ navigation }: any) {
         <View>
           <Text style={calendarStyles.headerTitle}>Calendar</Text>
           <Text style={calendarStyles.headerSubtitle}>
-            {events.length} {events.length === 1 ? "event" : "events"} scheduled
+            {calendarEvents.length} {calendarEvents.length === 1 ? "booking" : "bookings"} tracked
           </Text>
         </View>
       </View>
@@ -138,6 +143,7 @@ export default function CalendarScreen({ navigation }: any) {
             {calendarDays.map((day, index) => {
               const key = day ? getDateKey(day) : `empty-${index}`;
               const dayEvents = day ? eventsByDate[getDateKey(day)] || [] : [];
+              const hasConfirmed = dayEvents.some((event) => event.status === "confirmed");
               const isSelected = day ? getDateKey(day) === selectedDateKey : false;
               const isToday = day ? getDateKey(day) === todayKey : false;
 
@@ -147,6 +153,7 @@ export default function CalendarScreen({ navigation }: any) {
                   style={[
                     calendarStyles.dayCell,
                     isSelected && calendarStyles.selectedDayCell,
+                    hasConfirmed && !isSelected && calendarStyles.unavailableDayCell,
                     !day && calendarStyles.emptyDayCell,
                   ]}
                   disabled={!day}
@@ -171,6 +178,7 @@ export default function CalendarScreen({ navigation }: any) {
                               key={event.id}
                               style={[
                                 calendarStyles.eventDot,
+                                { backgroundColor: getStatusColor(event.status) },
                                 isSelected && calendarStyles.selectedEventDot,
                               ]}
                             />
@@ -196,7 +204,7 @@ export default function CalendarScreen({ navigation }: any) {
             </Text>
             <Text style={calendarStyles.agendaSubtitle}>
               {selectedEvents.length}{" "}
-              {selectedEvents.length === 1 ? "event" : "events"}
+              {selectedEvents.length === 1 ? "booking" : "bookings"}
             </Text>
           </View>
           <TouchableOpacity
@@ -226,7 +234,7 @@ export default function CalendarScreen({ navigation }: any) {
                 onPress={() => navigation.navigate("Details", { id: event.id })}
                 activeOpacity={0.8}
               >
-                <View style={calendarStyles.timePill}>
+                <View style={[calendarStyles.timePill, { backgroundColor: getStatusColor(event.status) }]}>
                   <Text style={calendarStyles.timeText}>
                     {eventDate.toLocaleTimeString("en-US", {
                       hour: "2-digit",
@@ -241,7 +249,7 @@ export default function CalendarScreen({ navigation }: any) {
                 <View style={calendarStyles.eventInfo}>
                   <Text style={calendarStyles.eventTitle}>{event.name}</Text>
                   <Text style={calendarStyles.eventVenue} numberOfLines={2}>
-                    {event.venue}
+                    {event.venue} - {event.status}
                   </Text>
                 </View>
                 <MaterialCommunityIcons

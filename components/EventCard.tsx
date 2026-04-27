@@ -4,8 +4,23 @@ import { ThemeContext } from "../context/ThemeContext";
 import { createCardStyles } from "../styles/EventCardStyles";
 import { Event } from "../types/Event";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { getStatusBackground, getStatusColor } from "../styles/statusColors";
 
-export default function EventCard({ event, onPress, onEdit, onDelete }: { event: Event; onPress: () => void; onEdit?: () => void; onDelete?: () => void }) {
+export default function EventCard({
+  event,
+  onPress,
+  onEdit,
+  onDelete,
+  onConfirm,
+  onCancel,
+}: {
+  event: Event;
+  onPress: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+}) {
   const { theme } = useContext(ThemeContext);
   const cardStyles = createCardStyles(theme);
   const [showActions, setShowActions] = useState(false);
@@ -56,6 +71,7 @@ export default function EventCard({ event, onPress, onEdit, onDelete }: { event:
       <View>
         <Text style={cardStyles.title}>{event.name}</Text>
         <Text style={cardStyles.subtitle}>{event.venue}</Text>
+        {event.userName && <Text style={cardStyles.meta}>Booked by {event.userName}</Text>}
       </View>
       <View style={cardStyles.detailsContainer}>
         <View>
@@ -78,9 +94,17 @@ export default function EventCard({ event, onPress, onEdit, onDelete }: { event:
             <Text style={cardStyles.details}>{timeString}</Text>
           </View>
         </View>
-        <View style={cardStyles.status}>
-          <Text style={cardStyles.statusText}>
-            {event.guests} {event.guests === 1 ? "guest" : "guests"}
+        <View
+          style={[
+            cardStyles.status,
+            {
+              backgroundColor: getStatusBackground(event.status),
+              borderColor: getStatusColor(event.status),
+            },
+          ]}
+        >
+          <Text style={[cardStyles.statusText, { color: getStatusColor(event.status) }]}>
+            {event.status.toUpperCase()}
           </Text>
         </View>
       </View>
@@ -101,12 +125,26 @@ export default function EventCard({ event, onPress, onEdit, onDelete }: { event:
             },
           ]}
         >
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: theme.primary }]} onPress={() => { handleActionClose(); onEdit?.(); }}>
-            <Text style={styles.actionText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: "#FF6B6B" }]} onPress={() => { handleActionClose(); onDelete?.(); }}>
-            <Text style={styles.actionText}>Delete</Text>
-          </TouchableOpacity>
+          {onEdit && (
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: theme.primary }]} onPress={() => { handleActionClose(); onEdit(); }}>
+              <Text style={styles.actionText}>Edit</Text>
+            </TouchableOpacity>
+          )}
+          {onConfirm && event.status !== "confirmed" && (
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: "#2E8B57" }]} onPress={() => { handleActionClose(); onConfirm(); }}>
+              <Text style={styles.actionText}>Confirm</Text>
+            </TouchableOpacity>
+          )}
+          {onCancel && event.status !== "cancelled" && (
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: "#FF6B6B" }]} onPress={() => { handleActionClose(); onCancel(); }}>
+              <Text style={styles.actionText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: "#FF6B6B" }]} onPress={() => { handleActionClose(); onDelete(); }}>
+              <Text style={styles.actionText}>Delete</Text>
+            </TouchableOpacity>
+          )}
         </Animated.View>
       )}
     </TouchableOpacity>

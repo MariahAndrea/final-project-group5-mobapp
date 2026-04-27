@@ -2,21 +2,25 @@ import { View, Text, TouchableOpacity, Alert, ScrollView } from "react-native";
 import { useContext } from "react";
 import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
+import { AuthContext } from "../context/AuthContext";
 import { createDetailsStyles } from "../styles/EventDetailsStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { getStatusColor } from "../styles/statusColors";
 
 export default function EventDetailsScreen({ route, navigation }: any) {
   const { id } = route.params;
-  const { events, deleteEvent } = useContext(EventContext);
+  const { events, updateEventStatus } = useContext(EventContext);
+  const { currentUser } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
   const detailsStyles = createDetailsStyles(theme);
+  const isAdmin = currentUser?.role === "admin";
 
   const event = events.find((e) => e.id === id);
 
   const handleDeleteEvent = () => {
     Alert.alert(
-      "Delete Event",
-      `Are you sure you want to cancel the booking for "${event?.name}"? This action cannot be undone.`,
+      "Cancel Booking",
+      `Are you sure you want to cancel the booking for "${event?.name}"?`,
       [
         {
           text: "Keep",
@@ -24,9 +28,9 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: "Cancel Booking",
           onPress: () => {
-            deleteEvent(id);
+            updateEventStatus(id, "cancelled");
             navigation.goBack();
           },
           style: "destructive",
@@ -53,6 +57,35 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     minute: "2-digit",
     hour12: true,
   }) : null;
+
+  const bookingDetails = [
+    `Event: ${event.name}`,
+    `Booked by: ${event.userName}`,
+    `Venue: ${event.venue}`,
+    `Date: ${dateString}`,
+    `Time: ${timeString}${endTimeString ? ` - ${endTimeString}` : ""}`,
+    `Guests: ${event.guests}`,
+    event.description ? `Description: ${event.description}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const confirmAdminStatusChange = (status: "confirmed" | "cancelled") => {
+    const actionLabel = status === "confirmed" ? "Confirm Booking" : "Cancel Booking";
+
+    Alert.alert(
+      actionLabel,
+      `${bookingDetails}\n\nDo you want to ${status === "confirmed" ? "confirm" : "cancel"} this booking?`,
+      [
+        { text: "Review Again", style: "cancel" },
+        {
+          text: actionLabel,
+          style: status === "cancelled" ? "destructive" : "default",
+          onPress: () => updateEventStatus(id, status),
+        },
+      ]
+    );
+  };
 
   return (
     <ScrollView
@@ -133,10 +166,10 @@ export default function EventDetailsScreen({ route, navigation }: any) {
                 : "cancel"
             }
             size={20}
-            color={theme.primary}
+            color={getStatusColor(event.status)}
             style={{ marginRight: 10 }}
           />
-          <Text style={detailsStyles.text} numberOfLines={1}>
+          <Text style={[detailsStyles.text, { color: getStatusColor(event.status), fontWeight: "800" }]} numberOfLines={1}>
             {event.status === "pending"
               ? "Pending"
               : event.status === "confirmed"
@@ -164,21 +197,34 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       )}
 
       <View style={detailsStyles.buttonContainer}>
-        <TouchableOpacity
-          style={detailsStyles.editButton}
-          onPress={() => navigation.navigate("Edit", { id })}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-            <MaterialCommunityIcons name="pencil" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Text style={detailsStyles.editButtonText}>Edit Event</Text>
-          </View>
-        </TouchableOpacity>
+        {!isAdmin && (
+          <TouchableOpacity
+            style={detailsStyles.editButton}
+            onPress={() => navigation.navigate("Edit", { id })}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+              <MaterialCommunityIcons name="pencil" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={detailsStyles.editButtonText}>Edit Event</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        {isAdmin && event.status !== "confirmed" && (
+          <TouchableOpacity
+            style={[detailsStyles.editButton, { backgroundColor: "#2E8B57" }]}
+            onPress={() => confirmAdminStatusChange("confirmed")}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+              <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={detailsStyles.editButtonText}>Confirm Booking</Text>
+            </View>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={detailsStyles.deleteButton}
-          onPress={handleDeleteEvent}
+          onPress={isAdmin ? () => confirmAdminStatusChange("cancelled") : handleDeleteEvent}
         >
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-            <MaterialCommunityIcons name="trash-can" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <MaterialCommunityIcons name={isAdmin ? "cancel" : "trash-can"} size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Text style={detailsStyles.deleteButtonText}>Cancel Booking</Text>
           </View>
         </TouchableOpacity>

@@ -27,6 +27,30 @@ export const createEditEventStyles = (theme: Theme) =>
       borderRadius: 8,
       fontSize: 16,
       color: theme.text,
+      minHeight: 52,
+    },
+    pickerContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+      minWidth: 0,
+    },
+    pickerText: {
+      flex: 1,
+      flexShrink: 1,
+      fontSize: 15,
+      lineHeight: 20,
+    },
+    timeRow: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    timeButton: {
+      flex: 1,
+      minWidth: 0,
+      justifyContent: "center",
+      paddingVertical: 14,
+      marginBottom: 16,
     },
     label: {
       marginBottom: 8,
@@ -52,8 +76,11 @@ export const createEditEventStyles = (theme: Theme) =>
       backgroundColor: theme.surface,
     },
     resultText: {
+      flex: 1,
+      flexShrink: 1,
       fontSize: 14,
       color: theme.text,
+      lineHeight: 19,
     },
     buttonContainer: {
       marginTop: 20,
