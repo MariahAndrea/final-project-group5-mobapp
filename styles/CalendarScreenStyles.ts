@@ -101,6 +101,9 @@ export const createCalendarStyles = (theme: Theme) =>
     selectedDayCell: {
       backgroundColor: theme.primary,
     },
+    unavailableDayCell: {
+      backgroundColor: theme.border,
+    },
     dayText: {
       color: theme.text,
       fontSize: 15,

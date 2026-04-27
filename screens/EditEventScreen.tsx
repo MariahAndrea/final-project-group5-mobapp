@@ -22,6 +22,8 @@ const InputField = ({ label, placeholder, value, onChangeText, keyboardType = "d
       value={value}
       keyboardType={keyboardType}
       placeholderTextColor={theme.textSecondary}
+      multiline={label?.toLowerCase().includes("description")}
+      textAlignVertical={label?.toLowerCase().includes("description") ? "top" : "center"}
     />
   </View>
 );
@@ -30,6 +32,7 @@ export default function EditEventScreen({ route, navigation }: any) {
   const { id } = route.params;
   const { events, updateEvent } = useContext(EventContext);
   const { theme } = useContext(ThemeContext);
+  const editStyles = useMemo(() => createEditEventStyles(theme), [theme]);
 
   const event = events.find((e) => e.id === id);
 
@@ -78,13 +81,18 @@ export default function EditEventScreen({ route, navigation }: any) {
     const eventEndTime = new Date(eventDate);
     eventEndTime.setHours(endTime!.getHours(), endTime!.getMinutes());
 
+    if (eventEndTime <= eventDate) {
+      Alert.alert("Invalid Time", "End time must be later than the start time.");
+      return;
+    }
+
     // Check for overlapping events (excluding the current event being edited)
     const overlappingEvents = checkForOverlappingEvents(eventDate, eventEndTime, event?.id);
     if (overlappingEvents.length > 0) {
       const eventNames = overlappingEvents.map(e => e.name).join(", ");
       Alert.alert(
         "Overlapping Events Not Allowed",
-        `Cannot update event: it overlaps with the following existing events: ${eventNames}`
+        `This venue is unavailable during that time because it overlaps with: ${eventNames}`
       );
       return;
     }
@@ -125,6 +133,7 @@ export default function EditEventScreen({ route, navigation }: any) {
               longitude: event?.longitude ?? 0,
               description: description.trim() || undefined,
               endTime: eventEndTime.toISOString(),
+              status: event?.status === "confirmed" ? "pending" : event!.status,
             });
             navigation.goBack();
           },
@@ -214,8 +223,6 @@ export default function EditEventScreen({ route, navigation }: any) {
 
   if (!event) return null;
 
-  const editStyles = useMemo(() => createEditEventStyles(theme), [theme]);
-
   const getDateString = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -230,11 +237,19 @@ export default function EditEventScreen({ route, navigation }: any) {
         return false;
       }
 
+      if (existingEvent.status !== "confirmed") {
+        return false;
+      }
+
       const existingDate = new Date(existingEvent.date);
       const existingEndTime = existingEvent.endTime ? new Date(existingEvent.endTime) : null;
 
       // Check if dates match using a more reliable format
       if (getDateString(existingDate) !== getDateString(eventDate)) {
+        return false;
+      }
+
+      if (existingEvent.venue.trim().toLowerCase() !== venue.trim().toLowerCase()) {
         return false;
       }
 
@@ -304,9 +319,9 @@ export default function EditEventScreen({ route, navigation }: any) {
                   style={editStyles.resultItem}
                   onPress={() => handleSelectResult(item)}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", minWidth: 0 }}>
                     <MaterialCommunityIcons name="map-marker" size={16} color={theme.primary} style={{ marginRight: 8 }} />
-                    <Text style={editStyles.resultText}>{item.display_name}</Text>
+                    <Text style={editStyles.resultText} numberOfLines={2}>{item.display_name}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -323,9 +338,16 @@ export default function EditEventScreen({ route, navigation }: any) {
             }}
             style={[editStyles.input, { justifyContent: "center", paddingVertical: 16 }]}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={editStyles.pickerContent}>
               <MaterialCommunityIcons name="calendar" size={20} color={theme.primary} style={{ marginRight: 10 }} />
-              <Text style={{ color: date ? theme.text : theme.textSecondary, fontSize: 16 }}>
+              <Text
+                style={[
+                  editStyles.pickerText,
+                  { color: date ? theme.text : theme.textSecondary },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {date ? date.toDateString() : "Pick a date"}
               </Text>
             </View>
@@ -354,17 +376,24 @@ export default function EditEventScreen({ route, navigation }: any) {
 
         <View style={{ marginBottom: 16 }}>
           <Text style={editStyles.label}>Time</Text>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <View style={editStyles.timeRow}>
             <TouchableOpacity
               onPress={() => {
                 setTempTime(time);
                 setShowTimePicker(true);
               }}
-              style={[editStyles.input, { flex: 1, marginRight: 8, justifyContent: "center", paddingVertical: 16 }]}
+              style={[editStyles.input, editStyles.timeButton]}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={editStyles.pickerContent}>
                 <MaterialCommunityIcons name="clock" size={20} color={theme.primary} style={{ marginRight: 10 }} />
-                <Text style={{ color: time ? theme.text : theme.textSecondary, fontSize: 16 }}>
+                <Text
+                  style={[
+                    editStyles.pickerText,
+                    { color: time ? theme.text : theme.textSecondary },
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {time ? time.toLocaleTimeString("en-US", {
                     hour: 'numeric',
                     minute: '2-digit',
@@ -378,11 +407,18 @@ export default function EditEventScreen({ route, navigation }: any) {
                 setTempEndTime(endTime);
                 setShowEndTimePicker(true);
               }}
-              style={[editStyles.input, { flex: 1, marginLeft: 8, justifyContent: "center", paddingVertical: 16 }]}
+              style={[editStyles.input, editStyles.timeButton]}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={editStyles.pickerContent}>
                 <MaterialCommunityIcons name="clock-outline" size={20} color={theme.primary} style={{ marginRight: 10 }} />
-                <Text style={{ color: endTime ? theme.text : theme.textSecondary, fontSize: 16 }}>
+                <Text
+                  style={[
+                    editStyles.pickerText,
+                    { color: endTime ? theme.text : theme.textSecondary },
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {endTime ? endTime.toLocaleTimeString("en-US", {
                     hour: 'numeric',
                     minute: '2-digit',

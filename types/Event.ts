@@ -1,5 +1,7 @@
 export type Event = {
   id: string;
+  userId: string;
+  userName: string;
   name: string;
   venue: string;
   date: string;
@@ -9,4 +11,13 @@ export type Event = {
   description?: string;
   endTime: string;
   status: "pending" | "confirmed" | "cancelled";
+};
+
+export type User = {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+  role: "admin" | "user";
 };

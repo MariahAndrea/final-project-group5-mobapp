@@ -28,6 +28,11 @@ export const createCardStyles = (theme: Theme) =>
       color: theme.textSecondary,
       marginBottom: 8,
     },
+    meta: {
+      fontSize: 12,
+      color: theme.primary,
+      fontWeight: "700",
+    },
     detailsContainer: {
       flexDirection: "row",
       justifyContent: "space-between",

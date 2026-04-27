@@ -7,12 +7,13 @@ import { createHomeStyles } from "../styles/HomeScreenStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 export default function BookingHistoryScreen({ navigation }: any) {
-  const { events } = useContext(EventContext);
+  const { visibleEvents } = useContext(EventContext);
   const { theme } = useContext(ThemeContext);
   const homeStyles = createHomeStyles(theme);
 
-  // Filter past events (date before today)
-  const pastEvents = events.filter(event => new Date(event.date) < new Date());
+  const historyEvents = visibleEvents
+    .filter((event) => event.status === "cancelled" || new Date(event.date) < new Date())
+    .sort((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime());
 
   return (
     <View style={homeStyles.container}>
@@ -21,10 +22,10 @@ export default function BookingHistoryScreen({ navigation }: any) {
           <View>
             <Text style={homeStyles.headerTitle}>Booking History</Text>
             <Text style={homeStyles.headerDescription}>
-              View your past event bookings.
+              View past and deleted bookings.
             </Text>
             <Text style={homeStyles.headerSubtitle}>
-              {pastEvents.length} {pastEvents.length === 1 ? "event" : "events"}
+              {historyEvents.length} {historyEvents.length === 1 ? "booking" : "bookings"}
             </Text>
           </View>
           <TouchableOpacity
@@ -36,7 +37,7 @@ export default function BookingHistoryScreen({ navigation }: any) {
         </View>
       </View>
 
-      {pastEvents.length === 0 ? (
+      {historyEvents.length === 0 ? (
         <ScrollView
           contentContainerStyle={{
             flex: 1,
@@ -51,25 +52,23 @@ export default function BookingHistoryScreen({ navigation }: any) {
               color={theme.textSecondary}
               style={{ marginBottom: 16 }}
             />
-            <Text style={homeStyles.emptyText}>No past events</Text>
+            <Text style={homeStyles.emptyText}>No booking history</Text>
             <Text style={homeStyles.emptySubtext}>
-              Your booking history will appear here
+              Past and deleted bookings will appear here
             </Text>
           </View>
         </ScrollView>
       ) : (
         <FlatList
-          data={pastEvents}
+          data={historyEvents}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <EventCard
               event={item}
               onPress={() => navigation.navigate("Details", { id: item.id })}
-              onDelete={(id, name) => {/* Handle delete if needed */}}
-              showDeleteButton={false} // Probably don't allow deleting past events
             />
           )}
-          contentContainerStyle={homeStyles.listContainer}
+          contentContainerStyle={homeStyles.listContent}
         />
       )}
     </View>

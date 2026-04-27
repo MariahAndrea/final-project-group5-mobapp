@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useContext } from "react";
+import { ActivityIndicator, View } from "react-native";
 import HomeScreen from "../screens/HomeScreen";
 import CreateEventScreen from "../screens/CreateEventScreen";
 import EventDetailsScreen from "../screens/EventDetailsScreen";
@@ -8,10 +9,15 @@ import EditEventScreen from "../screens/EditEventScreen";
 import CalendarScreen from "../screens/CalendarScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import BookingHistoryScreen from "../screens/BookingHistoryScreen";
+import LoginScreen from "../screens/LoginScreen";
+import RegisterScreen from "../screens/RegisterScreen";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { ThemeContext } from "../context/ThemeContext";
+import { AuthContext } from "../context/AuthContext";
 
 export type RootStackParamList = {
+  Login: undefined;
+  Register: undefined;
   Home: undefined;
   Create: undefined;
   Calendar: undefined;
@@ -23,6 +29,15 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
+
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
+}
 
 function HomeStack() {
   return (
@@ -57,6 +72,19 @@ function ProfileStack() {
 
 export default function AppNavigator() {
   const { theme } = useContext(ThemeContext);
+  const { currentUser, isLoading } = useContext(AuthContext);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.background }}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
+
+  if (!currentUser) {
+    return <AuthStack />;
+  }
 
   return (
     <Tab.Navigator

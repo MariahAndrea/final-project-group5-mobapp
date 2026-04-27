@@ -3,6 +3,7 @@ import { useState, useContext, useMemo } from "react";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
+import { AuthContext } from "../context/AuthContext";
 import { createCreateEventStyles } from "../styles/CreateEventStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
@@ -28,6 +29,7 @@ const InputField = ({ label, placeholder, value, onChangeText, keyboardType = "d
 
 export default function CreateEventScreen({ navigation }: any) {
   const { events, addEvent } = useContext(EventContext);
+  const { currentUser } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
 
   const [name, setName] = useState("");
@@ -58,11 +60,19 @@ export default function CreateEventScreen({ navigation }: any) {
 
   const checkForOverlappingEvents = (eventDate: Date, eventEndTime: Date) => {
     return events.filter((existingEvent) => {
+      if (existingEvent.status !== "confirmed") {
+        return false;
+      }
+
       const existingDate = new Date(existingEvent.date);
       const existingEndTime = existingEvent.endTime ? new Date(existingEvent.endTime) : null;
 
       // Check if dates match using a more reliable format
       if (getDateString(existingDate) !== getDateString(eventDate)) {
+        return false;
+      }
+
+      if (existingEvent.venue.trim().toLowerCase() !== venue.trim().toLowerCase()) {
         return false;
       }
 
@@ -105,13 +115,18 @@ export default function CreateEventScreen({ navigation }: any) {
     const eventEndTime = new Date(eventDate);
     eventEndTime.setHours(endTime!.getHours(), endTime!.getMinutes());
 
+    if (eventEndTime <= eventDate) {
+      Alert.alert("Invalid Time", "End time must be later than the start time.");
+      return;
+    }
+
     // Check for overlapping events
     const overlappingEvents = checkForOverlappingEvents(eventDate, eventEndTime);
     if (overlappingEvents.length > 0) {
       const eventNames = overlappingEvents.map(e => e.name).join(", ");
       Alert.alert(
         "Overlapping Events Not Allowed",
-        `Cannot create event: it overlaps with the following existing events: ${eventNames}`
+        `This venue is unavailable during that time because it overlaps with: ${eventNames}`
       );
       return;
     }
@@ -144,6 +159,8 @@ export default function CreateEventScreen({ navigation }: any) {
           onPress: () => {
             addEvent({
               id: Date.now().toString(),
+              userId: currentUser?.id || "guest",
+              userName: currentUser?.name || "Guest",
               name,
               venue,
               date: eventDate.toISOString(),
