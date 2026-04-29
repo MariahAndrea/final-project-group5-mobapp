@@ -8,17 +8,30 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 export default function ProfileScreen({ navigation }: any) {
   const { theme } = useContext(ThemeContext);
-  const { currentUser, users, updateAccount, logout, deleteAccount } = useContext(AuthContext);
-  const { visibleEvents, deleteEventsForUser } = useContext(EventContext);
+  const { currentUser, updateAccount, logout, deleteAccount } = useContext(AuthContext);
+  const { deleteEventsForUser } = useContext(EventContext);
   const detailsStyles = createDetailsStyles(theme);
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(currentUser?.name || "");
   const [username, setUsername] = useState(currentUser?.username || "");
   const [email, setEmail] = useState(currentUser?.email || "");
   const [password, setPassword] = useState(currentUser?.password || "");
+  const [showPassword, setShowPassword] = useState(false);
   const isAdmin = currentUser?.role === "admin";
+  const hasAccountChanges =
+    name.trim() !== (currentUser?.name || "") ||
+    username.trim() !== (currentUser?.username || "") ||
+    email.trim() !== (currentUser?.email || "") ||
+    password !== (currentUser?.password || "");
+  const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const passwordIsValid = password.length >= 6;
 
   const saveProfile = async () => {
+    if (!name.trim() || !username.trim() || !email.trim() || !emailIsValid || !passwordIsValid) {
+      Alert.alert("Check Details", "Fill all fields, use a valid email address, and use a password with at least 6 characters.");
+      return;
+    }
+
     const result = await updateAccount({ name, username, email, password });
     if (!result.ok) {
       Alert.alert("Unable to Save", result.message);
@@ -29,12 +42,17 @@ export default function ProfileScreen({ navigation }: any) {
   };
 
   const confirmSaveProfile = () => {
+    if (!hasAccountChanges) {
+      Alert.alert("No Changes", "There are no account detail changes to save.");
+      return;
+    }
+
     Alert.alert(
-      "Update Account",
-      `Name: ${name}\nUsername: ${username}\nEmail: ${email}\n\nDo you want to save these account changes?`,
+      "Change Account Details",
+      `Name: ${name.trim()}\nUsername: ${username.trim()}\nEmail: ${email.trim()}\n\nDo you really want to change these account details?`,
       [
         { text: "Review Again", style: "cancel" },
-        { text: "Save", onPress: saveProfile },
+        { text: "Change Details", onPress: saveProfile },
       ]
     );
   };
@@ -88,44 +106,50 @@ export default function ProfileScreen({ navigation }: any) {
       </View>
 
       <View style={detailsStyles.detailsCard}>
-        <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12 }} onPress={() => setIsEditing(!isEditing)}>
+        <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12 }}>
           <MaterialCommunityIcons name="account-edit" size={24} color={theme.primary} style={{ marginRight: 16 }} />
           <View style={{ flex: 1 }}>
             <Text style={detailsStyles.text}>Account Details</Text>
-            <Text style={detailsStyles.textSecondary}>Update your name, username, email, and password</Text>
+            <Text style={detailsStyles.textSecondary}>Review your name, username, email, and password</Text>
           </View>
-          <MaterialCommunityIcons name={isEditing ? "chevron-up" : "chevron-right"} size={24} color={theme.textSecondary} />
-        </TouchableOpacity>
+          <MaterialCommunityIcons name={isEditing ? "chevron-up" : "lock-outline"} size={24} color={theme.textSecondary} />
+        </View>
+        {!isEditing && (
+          <TouchableOpacity style={detailsStyles.secondaryButton} onPress={() => setIsEditing(true)}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+              <MaterialCommunityIcons name="account-edit-outline" size={20} color={theme.primary} style={{ marginRight: 8 }} />
+              <Text style={detailsStyles.secondaryButtonText}>Change Account details</Text>
+            </View>
+          </TouchableOpacity>
+        )}
         {isEditing && (
           <View>
-            {[
-              ["Name", name, setName, false],
-              ["Username", username, setUsername, false],
-              ["Email", email, setEmail, false],
-              ["Password", password, setPassword, true],
-            ].map(([label, value, setter, secure]) => (
-              <View key={label as string}>
-                <Text style={detailsStyles.sectionLabel}>{label as string}</Text>
-                <TextInput
-                  value={value as string}
-                  onChangeText={setter as (text: string) => void}
-                  secureTextEntry={secure as boolean}
-                  placeholderTextColor={theme.textSecondary}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    borderRadius: 8,
-                    paddingHorizontal: 14,
-                    paddingVertical: 12,
-                    marginBottom: 8,
-                  }}
-                />
-              </View>
-            ))}
+            <Text style={detailsStyles.sectionLabel}>Name</Text>
+            <TextInput value={name} onChangeText={setName} placeholderTextColor={theme.textSecondary} style={detailsStyles.input} />
+            <Text style={detailsStyles.sectionLabel}>Username</Text>
+            <TextInput value={username} onChangeText={setUsername} placeholderTextColor={theme.textSecondary} autoCapitalize="none" style={detailsStyles.input} />
+            <Text style={detailsStyles.sectionLabel}>Email</Text>
+            <TextInput value={email} onChangeText={setEmail} placeholderTextColor={theme.textSecondary} autoCapitalize="none" keyboardType="email-address" style={[detailsStyles.input, email.length > 0 && !emailIsValid && detailsStyles.inputError]} />
+            {email.length > 0 && !emailIsValid && <Text style={detailsStyles.errorText}>Enter a valid email address.</Text>}
+            <Text style={detailsStyles.sectionLabel}>Password</Text>
+            <View style={[detailsStyles.passwordInputContainer, password.length > 0 && !passwordIsValid && detailsStyles.inputError]}>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                placeholderTextColor={theme.textSecondary}
+                style={detailsStyles.passwordInput}
+              />
+              <TouchableOpacity style={detailsStyles.iconButton} onPress={() => setShowPassword((value) => !value)}>
+                <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={22} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            {password.length > 0 && !passwordIsValid && <Text style={detailsStyles.errorText}>Password must be at least 6 characters.</Text>}
             <TouchableOpacity style={detailsStyles.editButton} onPress={confirmSaveProfile}>
-              <Text style={detailsStyles.editButtonText}>Save Account</Text>
+              <Text style={detailsStyles.editButtonText}>Save Account Changes</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={detailsStyles.secondaryButton} onPress={() => setIsEditing(false)}>
+              <Text style={detailsStyles.secondaryButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -133,9 +157,17 @@ export default function ProfileScreen({ navigation }: any) {
 
       {isAdmin && (
         <View style={detailsStyles.detailsCard}>
-          <Text style={detailsStyles.text}>Data Management</Text>
-          <Text style={detailsStyles.textSecondary}>{users.length} accounts stored locally</Text>
-          <Text style={detailsStyles.textSecondary}>{visibleEvents.length} bookings in the local database</Text>
+          <TouchableOpacity
+            style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12 }}
+            onPress={() => navigation.navigate("DataManagement")}
+          >
+            <MaterialCommunityIcons name="database-cog" size={24} color={theme.primary} style={{ marginRight: 16 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={detailsStyles.text}>Data Management</Text>
+              <Text style={detailsStyles.textSecondary}>View all accounts and local booking data</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color={theme.textSecondary} />
+          </TouchableOpacity>
         </View>
       )}
 

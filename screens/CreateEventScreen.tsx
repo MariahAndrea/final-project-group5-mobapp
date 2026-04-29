@@ -218,6 +218,8 @@ export default function CreateEventScreen({ navigation }: any) {
     setResults([]);
   };
 
+  const getPickerDefault = () => new Date();
+
   const handleDateChange = (_: DateTimePickerEvent, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       if (selectedDate) {
@@ -326,7 +328,7 @@ export default function CreateEventScreen({ navigation }: any) {
           <Text style={createStyles.label}>Date</Text>
           <TouchableOpacity
             onPress={() => {
-              setTempDate(date);
+              setTempDate(date || getPickerDefault());
               setShowDatePicker(true);
             }}
             style={[createStyles.input, { justifyContent: "center", paddingVertical: 16 }]}
@@ -350,7 +352,7 @@ export default function CreateEventScreen({ navigation }: any) {
           {Platform.OS === 'ios' && showDatePicker && (
             <TouchableOpacity
               onPress={() => {
-                if (tempDate) setDate(tempDate);
+                setDate(tempDate || getPickerDefault());
                 setShowDatePicker(false);
               }}
               style={[createStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
@@ -365,7 +367,7 @@ export default function CreateEventScreen({ navigation }: any) {
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <TouchableOpacity
               onPress={() => {
-                setTempTime(time);
+                setTempTime(time || getPickerDefault());
                 setShowTimePicker(true);
               }}
               style={[createStyles.input, { flex: 1, marginRight: 8, justifyContent: "center", paddingVertical: 16 }]}
@@ -383,7 +385,9 @@ export default function CreateEventScreen({ navigation }: any) {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                setTempEndTime(endTime);
+                const defaultEndTime = new Date();
+                defaultEndTime.setHours(defaultEndTime.getHours() + 1);
+                setTempEndTime(endTime || defaultEndTime);
                 setShowEndTimePicker(true);
               }}
               style={[createStyles.input, { flex: 1, marginLeft: 8, justifyContent: "center", paddingVertical: 16 }]}
@@ -412,7 +416,7 @@ export default function CreateEventScreen({ navigation }: any) {
           {Platform.OS === 'ios' && showTimePicker && (
             <TouchableOpacity
               onPress={() => {
-                if (tempTime) setTime(tempTime);
+                setTime(tempTime || getPickerDefault());
                 setShowTimePicker(false);
               }}
               style={[createStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
@@ -432,7 +436,9 @@ export default function CreateEventScreen({ navigation }: any) {
           {Platform.OS === 'ios' && showEndTimePicker && (
             <TouchableOpacity
               onPress={() => {
-                if (tempEndTime) setEndTime(tempEndTime);
+                const defaultEndTime = new Date();
+                defaultEndTime.setHours(defaultEndTime.getHours() + 1);
+                setEndTime(tempEndTime || defaultEndTime);
                 setShowEndTimePicker(false);
               }}
               style={[createStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}

@@ -57,6 +57,25 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     minute: "2-digit",
     hour12: true,
   }) : null;
+  const statusLabel =
+    event.status === "pending"
+      ? "Pending"
+      : event.status === "confirmed"
+      ? "Confirmed"
+      : "Cancelled";
+  const statusColor = getStatusColor(event.status);
+  const isReadOnly = event.status === "cancelled";
+  const detailItems = [
+    { label: "Venue", value: event.venue, icon: "map-marker" as const },
+    { label: "Date", value: dateString, icon: "calendar" as const },
+    { label: "Time", value: `${timeString}${endTimeString ? ` - ${endTimeString}` : ""}`, icon: "clock-outline" as const },
+    {
+      label: "Guests",
+      value: `${event.guests} ${event.guests === 1 ? "guest" : "guests"} attending`,
+      icon: "account-multiple" as const,
+    },
+    { label: "Booked By", value: event.userName, icon: "account" as const },
+  ];
 
   const bookingDetails = [
     `Event: ${event.name}`,
@@ -92,91 +111,44 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       style={detailsStyles.container}
       contentContainerStyle={detailsStyles.contentContainer}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <Text style={detailsStyles.header} numberOfLines={2}>{event.name}</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <Text style={detailsStyles.header} numberOfLines={2}>Event Details</Text>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="close" size={28} color={theme.text} />
         </TouchableOpacity>
       </View>
 
-      <View style={detailsStyles.detailsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <MaterialCommunityIcons
-            name="map-marker"
-            size={20}
-            color={theme.primary}
-            style={{ marginRight: 10 }}
-          />
-          <Text style={detailsStyles.text} numberOfLines={3}>{event.venue}</Text>
+      <View style={detailsStyles.heroCard}>
+        <View style={detailsStyles.heroIcon}>
+          <MaterialCommunityIcons name="calendar-star" size={26} color={theme.primary} />
+        </View>
+        <Text style={detailsStyles.header} numberOfLines={3}>{event.name}</Text>
+        <Text style={detailsStyles.textSecondary}>{event.venue}</Text>
+        <View
+          style={[
+            detailsStyles.statusPill,
+            {
+              borderColor: statusColor,
+              backgroundColor: event.status === "cancelled" ? theme.errorBackground : theme.primarySoft,
+            },
+          ]}
+        >
+          <Text style={[detailsStyles.statusPillText, { color: statusColor }]}>{statusLabel}</Text>
         </View>
       </View>
 
-      <Text style={detailsStyles.sectionLabel}>Date</Text>
-      <View style={detailsStyles.detailsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <MaterialCommunityIcons
-            name="calendar"
-            size={20}
-            color={theme.primary}
-            style={{ marginRight: 10 }}
-          />
-          <Text style={detailsStyles.dateText} numberOfLines={2}>{dateString}</Text>
-        </View>
-      </View>
-
-      <Text style={detailsStyles.sectionLabel}>Time</Text>
-      <View style={detailsStyles.detailsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <MaterialCommunityIcons
-            name="clock-outline"
-            size={20}
-            color={theme.primary}
-            style={{ marginRight: 10 }}
-          />
-          <Text style={detailsStyles.timeText} numberOfLines={1}>
-            {timeString}{endTimeString ? ` - ${endTimeString}` : ''}
-          </Text>
-        </View>
-      </View>
-
-      <Text style={detailsStyles.sectionLabel}>Guests</Text>
-      <View style={detailsStyles.detailsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <MaterialCommunityIcons
-            name="account-multiple"
-            size={20}
-            color={theme.primary}
-            style={{ marginRight: 10 }}
-          />
-          <Text style={detailsStyles.text} numberOfLines={2}>
-            {event.guests} {event.guests === 1 ? "guest" : "guests"} attending
-          </Text>
-        </View>
-      </View>
-
-      <Text style={detailsStyles.sectionLabel}>Status</Text>
-      <View style={detailsStyles.detailsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <MaterialCommunityIcons
-            name={
-              event.status === "pending"
-                ? "clock-outline"
-                : event.status === "confirmed"
-                ? "check-circle"
-                : "cancel"
-            }
-            size={20}
-            color={getStatusColor(event.status)}
-            style={{ marginRight: 10 }}
-          />
-          <Text style={[detailsStyles.text, { color: getStatusColor(event.status), fontWeight: "800" }]} numberOfLines={1}>
-            {event.status === "pending"
-              ? "Pending"
-              : event.status === "confirmed"
-              ? "Confirmed"
-              : "Cancelled"}
-          </Text>
-        </View>
+      <View style={detailsStyles.detailsGrid}>
+        {detailItems.map((item) => (
+          <View key={item.label} style={detailsStyles.detailRow}>
+            <View style={detailsStyles.detailIcon}>
+              <MaterialCommunityIcons name={item.icon} size={20} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={detailsStyles.detailLabel}>{item.label}</Text>
+              <Text style={detailsStyles.detailValue}>{item.value}</Text>
+            </View>
+          </View>
+        ))}
       </View>
 
       {event.description && (
@@ -196,39 +168,48 @@ export default function EventDetailsScreen({ route, navigation }: any) {
         </>
       )}
 
-      <View style={detailsStyles.buttonContainer}>
-        {!isAdmin && (
+      {isReadOnly && (
+        <View style={[detailsStyles.detailsCard, { marginTop: 20 }]}>
+          <Text style={detailsStyles.text}>This booking is cancelled.</Text>
+          <Text style={detailsStyles.textSecondary}>Cancelled bookings are available for viewing only.</Text>
+        </View>
+      )}
+
+      {!isReadOnly && (
+        <View style={detailsStyles.buttonContainer}>
+          {!isAdmin && (
+            <TouchableOpacity
+              style={detailsStyles.editButton}
+              onPress={() => navigation.navigate("Edit", { id })}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+                <MaterialCommunityIcons name="pencil" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={detailsStyles.editButtonText}>Edit Event</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+          {isAdmin && event.status !== "confirmed" && (
+            <TouchableOpacity
+              style={[detailsStyles.editButton, { backgroundColor: "#2E8B57" }]}
+              onPress={() => confirmAdminStatusChange("confirmed")}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+                <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={detailsStyles.editButtonText}>Confirm Booking</Text>
+              </View>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={detailsStyles.editButton}
-            onPress={() => navigation.navigate("Edit", { id })}
+            style={detailsStyles.deleteButton}
+            onPress={isAdmin ? () => confirmAdminStatusChange("cancelled") : handleDeleteEvent}
           >
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-              <MaterialCommunityIcons name="pencil" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={detailsStyles.editButtonText}>Edit Event</Text>
+              <MaterialCommunityIcons name={isAdmin ? "cancel" : "trash-can"} size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={detailsStyles.deleteButtonText}>Cancel Booking</Text>
             </View>
           </TouchableOpacity>
-        )}
-        {isAdmin && event.status !== "confirmed" && (
-          <TouchableOpacity
-            style={[detailsStyles.editButton, { backgroundColor: "#2E8B57" }]}
-            onPress={() => confirmAdminStatusChange("confirmed")}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-              <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={detailsStyles.editButtonText}>Confirm Booking</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={detailsStyles.deleteButton}
-          onPress={isAdmin ? () => confirmAdminStatusChange("cancelled") : handleDeleteEvent}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-            <MaterialCommunityIcons name={isAdmin ? "cancel" : "trash-can"} size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Text style={detailsStyles.deleteButtonText}>Cancel Booking</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+        </View>
+      )}
     </ScrollView>
   );
 }

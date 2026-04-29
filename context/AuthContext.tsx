@@ -30,6 +30,8 @@ export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 const withoutDuplicateAdmin = (users: User[]) =>
   users.filter((user) => user.username.toUpperCase() !== "ADMIN" && user.id !== "admin");
 
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>([adminUser]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -84,6 +86,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const username = details.username.trim();
     const email = details.email.trim();
 
+    if (!details.name.trim() || !username || !isValidEmail(email) || details.password.length < 6) {
+      return { ok: false, message: "Use a valid email address and a password with at least 6 characters." };
+    }
+
     if (users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
       return { ok: false, message: "That username is already taken." };
     }
@@ -117,6 +123,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const username = details.username.trim();
     const email = details.email.trim();
+
+    if (!details.name.trim() || !username || !isValidEmail(email) || details.password.length < 6) {
+      return { ok: false, message: "Use a valid email address and a password with at least 6 characters." };
+    }
+
     const duplicate = users.find(
       (user) =>
         user.id !== currentUser.id &&
