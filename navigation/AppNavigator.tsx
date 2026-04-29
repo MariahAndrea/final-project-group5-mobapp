@@ -9,6 +9,7 @@ import EditEventScreen from "../screens/EditEventScreen";
 import CalendarScreen from "../screens/CalendarScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import BookingHistoryScreen from "../screens/BookingHistoryScreen";
+import DataManagementScreen from "../screens/DataManagementScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -25,6 +26,7 @@ export type RootStackParamList = {
   Edit: { id: string };
   Profile: undefined;
   BookingHistory: undefined;
+  DataManagement: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -66,6 +68,9 @@ function ProfileStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="BookingHistory" component={BookingHistoryScreen} />
+      <Stack.Screen name="DataManagement" component={DataManagementScreen} />
+      <Stack.Screen name="Details" component={EventDetailsScreen} />
+      <Stack.Screen name="Edit" component={EditEventScreen} />
     </Stack.Navigator>
   );
 }

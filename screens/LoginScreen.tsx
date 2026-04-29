@@ -7,7 +7,7 @@ import { createAuthStyles } from "../styles/AuthStyles";
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
+  const { theme, isDarkMode, toggleTheme } = useContext(ThemeContext);
   const styles = useMemo(() => createAuthStyles(theme), [theme]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +25,13 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
+          <MaterialCommunityIcons
+            name={isDarkMode ? "white-balance-sunny" : "moon-waning-crescent"}
+            size={20}
+            color={theme.primary}
+          />
+        </TouchableOpacity>
         <Text style={styles.brand}>EventEase</Text>
         <Text style={styles.subtitle}>Book events, track date availability, and manage requests from one clean workspace.</Text>
 

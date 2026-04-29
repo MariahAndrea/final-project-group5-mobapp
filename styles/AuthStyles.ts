@@ -12,6 +12,18 @@ export const createAuthStyles = (theme: Theme) =>
       justifyContent: "center",
       padding: 22,
     },
+    themeButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      backgroundColor: theme.surface,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: theme.border,
+      alignSelf: "flex-end",
+      marginBottom: 18,
+    },
     brand: {
       fontSize: 34,
       fontWeight: "900",
@@ -58,6 +70,18 @@ export const createAuthStyles = (theme: Theme) =>
       paddingVertical: 14,
       fontSize: 15,
       marginBottom: 14,
+    },
+    inputError: {
+      borderColor: "#D92D20",
+      backgroundColor: theme.errorBackground,
+      color: theme.text,
+      marginBottom: 6,
+    },
+    errorText: {
+      color: "#D92D20",
+      fontSize: 12,
+      fontWeight: "700",
+      marginBottom: 12,
     },
     button: {
       backgroundColor: theme.primary,
