@@ -10,7 +10,7 @@ export const createHomeStyles = (theme: Theme) =>
     header: {
       paddingHorizontal: 20,
       paddingTop: 54,
-      paddingBottom: 20,
+      paddingBottom: 10,
       backgroundColor: theme.surface,
       borderBottomWidth: 0,
       shadowColor: theme.shadowColor,
@@ -68,6 +68,14 @@ export const createHomeStyles = (theme: Theme) =>
       alignItems: "center",
       borderWidth: 1,
       borderColor: theme.border,
+    },
+    closeButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      backgroundColor: theme.surface,
+      justifyContent: "center",
+      alignItems: "center",
     },
     primaryActions: {
       flexDirection: "row",

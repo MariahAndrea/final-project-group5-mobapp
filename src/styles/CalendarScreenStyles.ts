@@ -45,11 +45,17 @@ export const createCalendarStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.border,
     },
+    todayButton: {
+      width: '100%',
+      alignItems: 'flex-end',
+      paddingVertical: 10,
+      paddingRight: 2,
+    },
     monthBar: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 16,
+      marginBottom: 0,
     },
     monthTitleContainer: {
       alignItems: "center",
@@ -75,7 +81,7 @@ export const createCalendarStyles = (theme: Theme) =>
     },
     weekRow: {
       flexDirection: "row",
-      marginBottom: 8,
+      marginBottom: 16,
     },
     weekDay: {
       flex: 1,
@@ -90,7 +96,7 @@ export const createCalendarStyles = (theme: Theme) =>
     },
     dayCell: {
       width: `${100 / 7}%`,
-      aspectRatio: 1,
+      paddingVertical: 12,
       justifyContent: "center",
       alignItems: "center",
       borderRadius: 8,

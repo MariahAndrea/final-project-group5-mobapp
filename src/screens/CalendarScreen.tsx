@@ -114,9 +114,7 @@ export default function CalendarScreen({ navigation }: any) {
           </TouchableOpacity>
           <View style={calendarStyles.monthTitleContainer}>
             <Text style={calendarStyles.monthTitle}>{monthLabel}</Text>
-            <TouchableOpacity onPress={goToToday}>
-              <Text style={calendarStyles.todayLink}>Today</Text>
-            </TouchableOpacity>
+    
           </View>
           <TouchableOpacity
             style={calendarStyles.iconButton}
@@ -127,6 +125,12 @@ export default function CalendarScreen({ navigation }: any) {
               size={24}
               color={theme.primary}
             />
+          </TouchableOpacity>
+        </View>
+
+        <View style={calendarStyles.todayButton}>
+          <TouchableOpacity onPress={goToToday}>
+              <Text style={calendarStyles.todayLink}>Today</Text>
           </TouchableOpacity>
         </View>
 

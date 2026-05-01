@@ -39,9 +39,11 @@ export default function EditEventScreen({ route, navigation }: any) {
   const [name, setName] = useState(event?.name || "");
   const [venue, setVenue] = useState(event?.venue || "");
   const [date, setDate] = useState<Date | null>(event?.date ? new Date(event.date) : null);
+  const [endDate, setEndDate] = useState<Date | null>(event?.endTime ? new Date(event.endTime) : null);
   const [time, setTime] = useState<Date | null>(event?.date ? new Date(event.date) : null);
   const [endTime, setEndTime] = useState<Date | null>(event?.endTime ? new Date(event.endTime) : null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [guests, setGuests] = useState(String(event?.guests || ""));
@@ -50,6 +52,7 @@ export default function EditEventScreen({ route, navigation }: any) {
   const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
+  const [tempEndDate, setTempEndDate] = useState<Date | null>(null);
   const [tempTime, setTempTime] = useState<Date | null>(null);
   const [tempEndTime, setTempEndTime] = useState<Date | null>(null);
 
@@ -58,6 +61,7 @@ export default function EditEventScreen({ route, navigation }: any) {
       name.trim().length > 0 &&
       venue.trim().length > 0 &&
       date !== null &&
+      endDate !== null &&
       time !== null &&
       endTime !== null &&
       guests.trim().length > 0 &&
@@ -78,7 +82,7 @@ export default function EditEventScreen({ route, navigation }: any) {
     }
 
     // Create proper end time with correct date
-    const eventEndTime = new Date(eventDate);
+    const eventEndTime = new Date(endDate!);
     eventEndTime.setHours(endTime!.getHours(), endTime!.getMinutes());
 
     if (eventEndTime <= eventDate) {
@@ -98,6 +102,15 @@ export default function EditEventScreen({ route, navigation }: any) {
     }
 
     proceedWithUpdate(eventDate, eventEndTime);
+  };
+
+  const handleEndDateChange = (_: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      if (selectedDate) setEndDate(selectedDate);
+      setShowEndDatePicker(false);
+    } else {
+      if (selectedDate) setTempEndDate(selectedDate);
+    }
   };
 
   const proceedWithUpdate = (eventDate: Date, eventEndTime: Date) => {
@@ -149,7 +162,7 @@ export default function EditEventScreen({ route, navigation }: any) {
       clearTimeout(searchTimeout);
     }
 
-    if (text.trim().length > 2) {
+    if (text.trim().length > 2 && text.trim() !== event?.venue) {
       setIsSearching(true);
       const timeout = setTimeout(async () => {
         try {
@@ -172,6 +185,7 @@ export default function EditEventScreen({ route, navigation }: any) {
       }, 500);
       setSearchTimeout(timeout);
     } else {
+      
       setResults([]);
       setIsSearching(false);
     }
@@ -298,13 +312,35 @@ export default function EditEventScreen({ route, navigation }: any) {
 
         <View style={{ marginBottom: 16 }}>
           <Text style={editStyles.label}>Venue</Text>
-          <TextInput
-            placeholder="Search for a venue..."
-            onChangeText={handleVenueChange}
-            style={editStyles.input}
-            value={venue}
-            placeholderTextColor={theme.textSecondary}
-          />
+          
+          <View style={[
+            editStyles.input, 
+              { 
+                flexDirection: 'row', 
+                alignItems: 'center', 
+                paddingVertical: 2,
+              }
+            ]}>
+              <MaterialCommunityIcons 
+                name="map-marker-outline" 
+                size={20} 
+                color={theme.primary} 
+                style={{ marginRight: 8 }} 
+              />
+            <TextInput
+              placeholder="Search for a venue..."
+              onChangeText={handleVenueChange}
+              value={venue}
+              placeholderTextColor={theme.textSecondary}
+              style={{
+                flex: 1,
+                height: 48,
+                color: theme.text,
+                fontSize: 16,
+              }}
+            />
+            </View>
+
           {isSearching && (
             <View style={{ paddingVertical: 12, alignItems: "center" }}>
               <ActivityIndicator size="small" color={theme.primary} />
@@ -330,7 +366,7 @@ export default function EditEventScreen({ route, navigation }: any) {
         </View>
 
         <View style={{ marginBottom: 16 }}>
-          <Text style={editStyles.label}>Date</Text>
+          <Text style={editStyles.label}>Start Date</Text>
           <TouchableOpacity
             onPress={() => {
               setTempDate(date);
@@ -348,7 +384,7 @@ export default function EditEventScreen({ route, navigation }: any) {
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
-                {date ? date.toDateString() : "Pick a date"}
+                {date ? date.toDateString() : "Pick start date"}
               </Text>
             </View>
           </TouchableOpacity>
@@ -366,6 +402,46 @@ export default function EditEventScreen({ route, navigation }: any) {
               onPress={() => {
                 if (tempDate) setDate(tempDate);
                 setShowDatePicker(false);
+              }}
+              style={[editStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
+            >
+              <Text style={{ color: "#FFFFFF", fontWeight: "600", textAlign: "center" }}>Done</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={{ marginBottom: 16 }}>
+          <Text style={editStyles.label}>End Date</Text>
+          <TouchableOpacity
+            onPress={() => {
+              setTempEndDate(endDate || date);
+              setShowEndDatePicker(true);
+            }}
+            style={[editStyles.input, { justifyContent: "center", paddingVertical: 16 }]}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <MaterialCommunityIcons name="calendar-range" size={20} color={theme.primary} style={{ marginRight: 10 }} />
+              <Text style={{ color: endDate ? theme.text : theme.textSecondary, fontSize: 16 }}>
+                {endDate ? endDate.toDateString() : "Pick end date"}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {showEndDatePicker && (
+            <DateTimePicker
+              value={Platform.OS === 'ios' ? (tempEndDate || new Date()) : (endDate || new Date())}
+              mode="date"
+              minimumDate={date || new Date()} 
+              display={Platform.OS === "ios" ? "spinner" : "calendar"}
+              onChange={handleEndDateChange}
+            />
+          )}
+
+          {Platform.OS === 'ios' && showEndDatePicker && (
+            <TouchableOpacity
+              onPress={() => {
+                setEndDate(tempEndDate || date);
+                setShowEndDatePicker(false);
               }}
               style={[editStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
             >

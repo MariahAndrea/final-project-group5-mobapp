@@ -23,7 +23,6 @@ export const createEditEventStyles = (theme: Theme) =>
       backgroundColor: theme.surface,
       paddingHorizontal: 14,
       paddingVertical: 15,
-      marginBottom: 16,
       borderRadius: 8,
       fontSize: 16,
       color: theme.text,

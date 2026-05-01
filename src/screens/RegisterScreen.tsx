@@ -36,13 +36,7 @@ export default function RegisterScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
-          <MaterialCommunityIcons
-            name={isDarkMode ? "white-balance-sunny" : "moon-waning-crescent"}
-            size={20}
-            color={theme.primary}
-          />
-        </TouchableOpacity>
+        
         <Text style={styles.brand}>EventEase</Text>
         <Text style={styles.subtitle}>Create your account to start booking and tracking your events.</Text>
 
