@@ -104,8 +104,8 @@ export default function HomeScreen({ navigation }: any) {
         <View style={homeStyles.headerTop}>
           <View style={homeStyles.headerTextBlock}>
             <Text style={homeStyles.headerTitle}>EventEase</Text>
-            <View style={{ backgroundColor: theme.primarySoft, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, alignSelf: "flex-start", marginTop: 4 }}>
-              <Text style={[homeStyles.headerSubtitle, { color: theme.primary, fontSize: 13 }]}>
+            <View style={homeStyles.bookingTrackerCapsule}>
+              <Text style={homeStyles.bookingTrackerText}>
                 {filteredEvents.length} {filteredEvents.length === 1 ? "booking" : "bookings"}
               </Text>
             </View>
@@ -125,19 +125,19 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 16, paddingVertical: 12, flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12 }}>
+      <View style={homeStyles.searchBarContainer}>
+        <View style={homeStyles.searchInputContainer}>
           <MaterialCommunityIcons name="magnify" size={20} color={theme.textSecondary} />
           <TextInput
             placeholder="Search events..."
             placeholderTextColor={theme.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 8, color: theme.text, fontSize: 14 }}
+            style={homeStyles.searchInput}
           />
         </View>
         <TouchableOpacity
-          style={{ padding: 10, backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border }}
+          style={homeStyles.filterButton}
           onPress={() => setFilterDropdownOpen(!filterDropdownOpen)}
         >
           <MaterialCommunityIcons name="filter-variant" size={20} color={theme.primary} />
@@ -147,16 +147,7 @@ export default function HomeScreen({ navigation }: any) {
       {filterDropdownOpen && (
         <Animated.View
           style={{
-            position: "absolute",
-            top: 170,
-            right: 16,
-            width: 130,
-            backgroundColor: theme.surface,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: theme.border,
-            overflow: "hidden",
-            zIndex: 10,
+            ...homeStyles.filterDropdown,
             opacity: dropdownAnimated,
             transform: [
               {
@@ -169,31 +160,31 @@ export default function HomeScreen({ navigation }: any) {
           }}
         >
           <TouchableOpacity
-            style={{ paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: theme.border }}
+            style={homeStyles.filterDropdownItem}
             onPress={() => {
               setStatusFilter("all");
               setFilterDropdownOpen(false);
             }}
           >
-            <Text style={[{ color: theme.text, fontSize: 13, fontWeight: statusFilter === "all" ? "600" : "400" }]}>All</Text>
+            <Text style={[homeStyles.filterDropdownItemText, { fontWeight: statusFilter === "all" ? "600" : "400" }]}>All</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={{ paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: theme.border }}
+            style={homeStyles.filterDropdownItem}
             onPress={() => {
               setStatusFilter("pending");
               setFilterDropdownOpen(false);
             }}
           >
-            <Text style={[{ color: theme.text, fontSize: 13, fontWeight: statusFilter === "pending" ? "600" : "400" }]}>Pending</Text>
+            <Text style={[homeStyles.filterDropdownItemText, { fontWeight: statusFilter === "pending" ? "600" : "400" }]}>Pending</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={{ paddingVertical: 10, paddingHorizontal: 14 }}
+            style={[homeStyles.filterDropdownItem, { borderBottomWidth: 0 }]}
             onPress={() => {
               setStatusFilter("completed");
               setFilterDropdownOpen(false);
             }}
           >
-            <Text style={[{ color: theme.text, fontSize: 13, fontWeight: statusFilter === "completed" ? "600" : "400" }]}>Completed</Text>
+            <Text style={[homeStyles.filterDropdownItemText, { fontWeight: statusFilter === "completed" ? "600" : "400" }]}>Completed</Text>
           </TouchableOpacity>
         </Animated.View>
       )}
