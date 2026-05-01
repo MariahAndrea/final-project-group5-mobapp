@@ -1,9 +1,9 @@
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
-import AppNavigator from "./navigation/AppNavigator";
-import { EventProvider } from "./context/EventContext";
-import { ThemeProvider, ThemeContext } from "./context/ThemeContext";
-import { AuthProvider } from "./context/AuthContext";
+import AppNavigator from "./src/navigation/AppNavigator";
+import { EventProvider } from "./src/context/EventContext";
+import { ThemeProvider, ThemeContext } from "./src/context/ThemeContext";
+import { AuthProvider } from "./src/context/AuthContext";
 import { useContext } from "react";
 
 function AppContent() {

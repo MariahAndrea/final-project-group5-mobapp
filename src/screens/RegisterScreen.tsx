@@ -14,6 +14,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const passwordIsValid = password.length >= 6;
@@ -47,24 +48,36 @@ export default function RegisterScreen({ navigation }: any) {
 
         <View style={styles.panel}>
           <Text style={styles.title}>Register</Text>
+
           <Text style={styles.label}>Name</Text>
           <TextInput value={name} onChangeText={setName} placeholder="Full name" placeholderTextColor={theme.textSecondary} style={styles.input} />
+          
           <Text style={styles.label}>Username</Text>
           <TextInput value={username} onChangeText={setUsername} placeholder="Username" placeholderTextColor={theme.textSecondary} autoCapitalize="none" style={styles.input} />
+          
           <Text style={styles.label}>Email</Text>
           <TextInput value={email} onChangeText={setEmail} placeholder="Email" placeholderTextColor={theme.textSecondary} autoCapitalize="none" keyboardType="email-address" style={[styles.input, showEmailError && styles.inputError]} />
           {showEmailError && <Text style={styles.errorText}>Enter a valid email address.</Text>}
+          
           <Text style={styles.label}>Password</Text>
-          <TextInput value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor={theme.textSecondary} secureTextEntry style={[styles.input, showPasswordError && styles.inputError]} />
+          <View style={[ styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 6}]}>
+            <TextInput value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor={theme.textSecondary} secureTextEntry={!passwordVisible} style={[ showPasswordError && styles.inputError, { paddingRight: 45 , flex: 2}]} />
+            <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
+              <MaterialCommunityIcons name={passwordVisible ? "eye-off" : "eye"} size={22} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
           {showPasswordError && <Text style={styles.errorText}>Password must be at least 6 characters.</Text>}
+          
           <TouchableOpacity style={styles.button} onPress={handleRegister}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <MaterialCommunityIcons name="account-plus" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Text style={styles.buttonText}>Create Account</Text>
             </View>
           </TouchableOpacity>
+          
           <TouchableOpacity style={styles.linkButton} onPress={() => navigation.goBack()}>
             <Text style={styles.linkText}>I already have an account</Text>
+          
           </TouchableOpacity>
         </View>
       </ScrollView>
