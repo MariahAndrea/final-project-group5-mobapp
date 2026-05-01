@@ -1,10 +1,11 @@
-﻿import { Platform, View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Alert, ActivityIndicator } from "react-native";
+﻿import { Platform, View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator } from "react-native";
 import { useContext, useState, useMemo } from "react";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
 import { createEditEventStyles } from "../styles/EditEventStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { useModal } from "../context/ModalContext";
 
 type LocationResult = {
   display_name: string;
@@ -33,6 +34,15 @@ export default function EditEventScreen({ route, navigation }: any) {
   const { events, updateEvent } = useContext(EventContext);
   const { theme } = useContext(ThemeContext);
   const editStyles = useMemo(() => createEditEventStyles(theme), [theme]);
+  const { showAlert, showConfirm, showSuccess } = useModal();
+
+  const safeGoBack = () => {
+    if (navigation && typeof navigation.canGoBack === "function" && navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate("Home");
+    }
+  };
 
   const event = events.find((e) => e.id === id);
 
@@ -72,7 +82,7 @@ export default function EditEventScreen({ route, navigation }: any) {
 
   const handleUpdate = () => {
     if (!isFormValid()) {
-      Alert.alert("Invalid Input", "Please fill in all fields correctly before updating the event.");
+      showAlert("Invalid Input", "Please fill in all fields correctly before updating the event.");
       return;
     }
 
@@ -86,7 +96,7 @@ export default function EditEventScreen({ route, navigation }: any) {
     eventEndTime.setHours(endTime!.getHours(), endTime!.getMinutes());
 
     if (eventEndTime <= eventDate) {
-      Alert.alert("Invalid Time", "End time must be later than the start time.");
+      showAlert("Invalid Time", "End time must be later than the start time.");
       return;
     }
 
@@ -94,10 +104,7 @@ export default function EditEventScreen({ route, navigation }: any) {
     const overlappingEvents = checkForOverlappingEvents(eventDate, eventEndTime, event?.id);
     if (overlappingEvents.length > 0) {
       const eventNames = overlappingEvents.map(e => e.name).join(", ");
-      Alert.alert(
-        "Overlapping Events Not Allowed",
-        `This venue is unavailable during that time because it overlaps with: ${eventNames}`
-      );
+      showAlert("Overlapping Events Not Allowed", `This venue is unavailable during that time because it overlaps with: ${eventNames}`);
       return;
     }
 
@@ -120,39 +127,28 @@ export default function EditEventScreen({ route, navigation }: any) {
       hour12: true
     }) : null;
 
-    Alert.alert(
-      "Confirm Event Changes",
-      `Event: ${name}\nVenue: ${venue}\nDate: ${eventDate.toDateString()}\nTime: ${eventDate.toLocaleTimeString("en-US", {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })}${endTimeString ? ` - ${endTimeString}` : ''}\nGuests: ${guests}${description ? `\nDescription: ${description}` : ''}\n\nAre these changes correct?`,
-      [
-        {
-          text: "Cancel",
-          onPress: () => {},
-          style: "cancel",
-        },
-        {
-          text: "Update",
-          onPress: () => {
-            updateEvent({
-              ...event!,
-              name,
-              venue,
-              date: eventDate.toISOString(),
-              guests: Number(guests),
-              latitude: event?.latitude ?? 0,
-              longitude: event?.longitude ?? 0,
-              description: description.trim() || undefined,
-              endTime: eventEndTime.toISOString(),
-              status: event?.status === "confirmed" ? "pending" : event!.status,
-            });
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    showConfirm({
+      title: "Confirm Event Changes",
+      message: `Event: ${name}\nVenue: ${venue}\nDate: ${eventDate.toDateString()}\nTime: ${eventDate.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true })}${endTimeString ? ` - ${endTimeString}` : ''}\nGuests: ${guests}${description ? `\nDescription: ${description}` : ''}\n\nAre these changes correct?`,
+      cancelText: "Cancel",
+      confirmText: "Update",
+      onConfirm: () => {
+        updateEvent({
+          ...event!,
+          name,
+          venue,
+          date: eventDate.toISOString(),
+          guests: Number(guests),
+          latitude: event?.latitude ?? 0,
+          longitude: event?.longitude ?? 0,
+          description: description.trim() || undefined,
+          endTime: eventEndTime.toISOString(),
+          status: event?.status === "confirmed" ? "pending" : event!.status,
+        });
+        showSuccess("Booking Updated", "Your changes have been saved.");
+        safeGoBack();
+      },
+    });
   };
 
   const handleVenueChange = (text: string) => {
@@ -284,10 +280,10 @@ export default function EditEventScreen({ route, navigation }: any) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
-      <ScrollView contentContainerStyle={editStyles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={editStyles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <Text style={editStyles.header}>Edit Event</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => safeGoBack()}>
             <MaterialCommunityIcons name="close" size={28} color={theme.text} />
           </TouchableOpacity>
         </View>

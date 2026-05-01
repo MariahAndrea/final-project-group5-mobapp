@@ -4,6 +4,7 @@ import AppNavigator from "./src/navigation/AppNavigator";
 import { EventProvider } from "./src/context/EventContext";
 import { ThemeProvider, ThemeContext } from "./src/context/ThemeContext";
 import { AuthProvider } from "./src/context/AuthContext";
+import { ModalProvider } from "./src/context/ModalContext";
 import { useCallback, useContext, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
@@ -57,9 +58,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <EventProvider>
-          <AppContent />
-        </EventProvider>
+        <ModalProvider>
+          <EventProvider>
+            <AppContent />
+          </EventProvider>
+        </ModalProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -1,11 +1,12 @@
-import { Alert, TextInput, View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useContext, useState } from "react";
 import * as ImagePickerLib from "expo-image-picker";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { ThemeContext } from "../context/ThemeContext";
 import { AuthContext } from "../context/AuthContext";
 import { EventContext } from "../context/EventContext";
 import { createDetailsStyles } from "../styles/EventDetailsStyles";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { useModal } from "../context/ModalContext";
 
 const ImagePicker = ImagePickerLib;
 
@@ -13,13 +14,16 @@ export default function ProfileScreen({ navigation }: any) {
   const { theme } = useContext(ThemeContext);
   const { currentUser, updateAccount, updateProfilePhoto, logout, deleteAccount } = useContext(AuthContext);
   const { deleteEventsForUser } = useContext(EventContext);
+  const { showAlert, showConfirm, showSuccess } = useModal();
   const detailsStyles = createDetailsStyles(theme);
+
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(currentUser?.name || "");
   const [username, setUsername] = useState(currentUser?.username || "");
   const [email, setEmail] = useState(currentUser?.email || "");
   const [password, setPassword] = useState(currentUser?.password || "");
   const [showPassword, setShowPassword] = useState(false);
+
   const isAdmin = currentUser?.role === "admin";
   const hasAccountChanges =
     name.trim() !== (currentUser?.name || "") ||
@@ -29,69 +33,80 @@ export default function ProfileScreen({ navigation }: any) {
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const passwordIsValid = password.length >= 6;
 
+  const safeGoBack = () => {
+    if (navigation && typeof navigation.canGoBack === "function" && navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate("Home");
+    }
+  };
+
   const saveProfile = async () => {
     if (!name.trim() || !username.trim() || !email.trim() || !emailIsValid || !passwordIsValid) {
-      Alert.alert("Check Details", "Fill all fields, use a valid email address, and use a password with at least 6 characters.");
+      showAlert("Check Details", "Fill all fields, use a valid email address, and use a password with at least 6 characters.");
       return;
     }
 
     const result = await updateAccount({ name, username, email, password });
     if (!result.ok) {
-      Alert.alert("Unable to Save", result.message);
+      showAlert("Unable to Save", result.message);
       return;
     }
+
     setIsEditing(false);
-    Alert.alert("Saved", "Your account details were updated.");
+    showSuccess("Saved", "Your account details were updated.");
   };
 
   const confirmSaveProfile = () => {
     if (!hasAccountChanges) {
-      Alert.alert("No Changes", "There are no account detail changes to save.");
+      showAlert("No Changes", "There are no account detail changes to save.");
       return;
     }
 
-    Alert.alert(
-      "Change Account Details",
-      `Name: ${name.trim()}\nUsername: ${username.trim()}\nEmail: ${email.trim()}\n\nDo you really want to change these account details?`,
-      [
-        { text: "Review Again", style: "cancel" },
-        { text: "Change Details", onPress: saveProfile },
-      ]
-    );
+    showConfirm({
+      title: "Change Account Details",
+      message: `Name: ${name.trim()}\nUsername: ${username.trim()}\nEmail: ${email.trim()}\n\nDo you really want to change these account details?`,
+      cancelText: "Review Again",
+      confirmText: "Change Details",
+      onConfirm: saveProfile,
+    });
   };
 
   const confirmDelete = () => {
-    Alert.alert("Delete Account", "Do you really want to delete this account? This permanently deletes your account and all of your booking data.", [
-      { text: "Keep Account", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          const deletedUserId = await deleteAccount();
-          if (deletedUserId) deleteEventsForUser(deletedUserId);
-        },
+    showConfirm({
+      title: "Delete Account",
+      message: "Do you really want to delete this account? This permanently deletes your account and all of your booking data.",
+      cancelText: "Keep Account",
+      confirmText: "Delete",
+      confirmVariant: "danger",
+      onConfirm: async () => {
+        const deletedUserId = await deleteAccount();
+        if (deletedUserId) deleteEventsForUser(deletedUserId);
       },
-    ]);
+    });
   };
 
   const confirmLogout = () => {
-    Alert.alert("Log Out", "Do you want to log out?", [
-      { text: "Stay Logged In", style: "cancel" },
-      {
-        text: "Log Out",
-        onPress: logout,
+    showConfirm({
+      title: "Log Out",
+      message: "Do you want to log out?",
+      cancelText: "Stay Logged In",
+      confirmText: "Log Out",
+      confirmVariant: "danger",
+      onConfirm: () => {
+        logout();
       },
-    ]);
+    });
   };
 
   const pickImage = async (useCamera: boolean) => {
     try {
-      const permission = useCamera 
+      const permission = useCamera
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permission.granted) {
-        Alert.alert("Permission Required", `We need access to your ${useCamera ? "camera" : "photo library"} to change your profile photo.`);
+        showAlert("Permission Required", `We need access to your ${useCamera ? "camera" : "photo library"} to change your profile photo.`);
         return;
       }
 
@@ -110,84 +125,99 @@ export default function ProfileScreen({ navigation }: any) {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const response = await updateProfilePhoto(result.assets[0].uri);
         if (response.ok) {
-          Alert.alert("Success", "Your profile photo has been updated!");
+          showSuccess("Photo Updated", "Your profile photo has been updated!");
         } else {
-          Alert.alert("Error", response.message || "Failed to update profile photo.");
+          showAlert("Error", response.message || "Failed to update profile photo.");
         }
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to pick image. Please try again.");
+    } catch {
+      showAlert("Error", "Failed to pick image. Please try again.");
     }
   };
 
   const showPhotoOptions = () => {
-    Alert.alert("Change Profile Photo", "How would you like to update your profile photo?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Take a Photo",
-        onPress: () => pickImage(true),
-      },
-      {
-        text: "Choose from Gallery",
-        onPress: () => pickImage(false),
-      },
-    ]);
+    showConfirm({
+      title: "Change Profile Photo",
+      message: "How would you like to update your profile photo?",
+      cancelText: "Choose from Gallery",
+      confirmText: "Take a Photo",
+      onConfirm: () => pickImage(true),
+      onCancel: () => pickImage(false),
+    });
   };
 
   return (
-    <ScrollView
-      style={detailsStyles.container}
-      contentContainerStyle={detailsStyles.contentContainer}
-    >
+    <ScrollView style={detailsStyles.container} contentContainerStyle={detailsStyles.contentContainer} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <Text style={detailsStyles.header}>Profile</Text>
+        <TouchableOpacity onPress={safeGoBack}>
+          <MaterialCommunityIcons name="close" size={28} color={theme.text} />
+        </TouchableOpacity>
       </View>
 
       <View style={detailsStyles.detailsCard}>
         <TouchableOpacity onPress={showPhotoOptions} style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}>
-          <View style={{
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            backgroundColor: theme.primarySoft,
-            justifyContent: "center",
-            alignItems: "center",
-            marginRight: 16,
-            marginTop: 4,
-            overflow: "hidden",
-          }}>
-            {currentUser?.profilePhoto ? (
-              <Image
-                source={{ uri: currentUser.profilePhoto }}
-                style={{ width: 64, height: 64, borderRadius: 32 }}
-              />
-            ) : (
-              <MaterialCommunityIcons
-                name="account"
-                size={40}
-                color={theme.primary}
-              />
-            )}
+          <View style={{ position: "relative" }}>
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: theme.primarySoft,
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 16,
+                marginTop: 4,
+                overflow: "hidden",
+              }}
+            >
+              {currentUser?.profilePhoto ? (
+                <Image source={{ uri: currentUser.profilePhoto }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+              ) : (
+                <MaterialCommunityIcons name="account" size={40} color={theme.primary} />
+              )}
+            </View>
+            <View
+              style={{
+                position: "absolute",
+                bottom: -2,
+                right: 12,
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: theme.primary,
+                justifyContent: "center",
+                alignItems: "center",
+                borderWidth: 2,
+                borderColor: theme.surface,
+              }}
+            >
+              <MaterialCommunityIcons name="pencil" size={14} color={theme.surface} />
+            </View>
           </View>
           <View style={{ flex: 1, paddingTop: 4 }}>
             <Text style={detailsStyles.text}>{currentUser?.name}</Text>
-            <Text style={detailsStyles.textSecondary}>{currentUser?.username} - {currentUser?.role}</Text>
+            <Text style={detailsStyles.textSecondary}>
+              {currentUser?.username} - {currentUser?.role}
+            </Text>
           </View>
         </TouchableOpacity>
       </View>
 
       <View style={detailsStyles.detailsCard}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}>
-          <View style={{
-            width: 36,
-            height: 36,
-            borderRadius: 8,
-            backgroundColor: theme.primarySoft,
-            justifyContent: "center",
-            alignItems: "center",
-            marginRight: 16,
-            marginTop: 2,
-          }}>
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              backgroundColor: theme.primarySoft,
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: 16,
+              marginTop: 2,
+            }}
+          >
             <MaterialCommunityIcons name="account-edit" size={20} color={theme.primary} />
           </View>
           <View style={{ flex: 1, paddingTop: 2 }}>
@@ -196,6 +226,7 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
           <MaterialCommunityIcons name={isEditing ? "chevron-up" : "lock-outline"} size={24} color={theme.textSecondary} style={{ marginLeft: 8 }} />
         </View>
+
         {!isEditing && (
           <TouchableOpacity style={detailsStyles.secondaryButton} onPress={() => setIsEditing(true)}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
@@ -204,6 +235,7 @@ export default function ProfileScreen({ navigation }: any) {
             </View>
           </TouchableOpacity>
         )}
+
         {isEditing && (
           <View>
             <Text style={detailsStyles.sectionLabel}>Name</Text>
@@ -211,7 +243,14 @@ export default function ProfileScreen({ navigation }: any) {
             <Text style={detailsStyles.sectionLabel}>Username</Text>
             <TextInput value={username} onChangeText={setUsername} placeholderTextColor={theme.textSecondary} autoCapitalize="none" style={detailsStyles.input} />
             <Text style={detailsStyles.sectionLabel}>Email</Text>
-            <TextInput value={email} onChangeText={setEmail} placeholderTextColor={theme.textSecondary} autoCapitalize="none" keyboardType="email-address" style={[detailsStyles.input, email.length > 0 && !emailIsValid && detailsStyles.inputError]} />
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholderTextColor={theme.textSecondary}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={[detailsStyles.input, email.length > 0 && !emailIsValid && detailsStyles.inputError]}
+            />
             {email.length > 0 && !emailIsValid && <Text style={detailsStyles.errorText}>Enter a valid email address.</Text>}
             <Text style={detailsStyles.sectionLabel}>Password</Text>
             <View style={[detailsStyles.passwordInputContainer, password.length > 0 && !passwordIsValid && detailsStyles.inputError]}>
@@ -239,20 +278,19 @@ export default function ProfileScreen({ navigation }: any) {
 
       {isAdmin && (
         <View style={detailsStyles.detailsCard}>
-          <TouchableOpacity
-            style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}
-            onPress={() => navigation.navigate("DataManagement")}
-          >
-            <View style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              backgroundColor: theme.primarySoft,
-              justifyContent: "center",
-              alignItems: "center",
-              marginRight: 16,
-              marginTop: 2,
-            }}>
+          <TouchableOpacity style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }} onPress={() => navigation.navigate("DataManagement")}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                backgroundColor: theme.primarySoft,
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 16,
+                marginTop: 2,
+              }}
+            >
               <MaterialCommunityIcons name="database-cog" size={20} color={theme.primary} />
             </View>
             <View style={{ flex: 1, paddingTop: 2 }}>
@@ -265,25 +303,20 @@ export default function ProfileScreen({ navigation }: any) {
       )}
 
       <View style={detailsStyles.detailsCard}>
-        <TouchableOpacity
-          style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}
-          onPress={() => navigation.navigate("BookingHistory")}
-        >
-          <View style={{
-            width: 36,
-            height: 36,
-            borderRadius: 8,
-            backgroundColor: theme.primarySoft,
-            justifyContent: "center",
-            alignItems: "center",
-            marginRight: 16,
-            marginTop: 2,
-          }}>
-            <MaterialCommunityIcons
-              name="history"
-              size={20}
-              color={theme.primary}
-            />
+        <TouchableOpacity style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }} onPress={() => navigation.navigate("BookingHistory")}>
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              backgroundColor: theme.primarySoft,
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: 16,
+              marginTop: 2,
+            }}
+          >
+            <MaterialCommunityIcons name="history" size={20} color={theme.primary} />
           </View>
           <View style={{ flex: 1, paddingTop: 2 }}>
             <Text style={detailsStyles.text}>Booking History</Text>

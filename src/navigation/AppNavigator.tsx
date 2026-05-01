@@ -15,6 +15,7 @@ import RegisterScreen from "../screens/RegisterScreen";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { ThemeContext } from "../context/ThemeContext";
 import { AuthContext } from "../context/AuthContext";
+import CustomTabBar from "../components/CustomTabBar";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -44,7 +45,7 @@ function AuthStack() {
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="HomeMain" component={HomeScreen} />
       <Stack.Screen name="Create" component={CreateEventScreen} />
       <Stack.Screen name="Details" component={EventDetailsScreen} />
       <Stack.Screen name="Edit" component={EditEventScreen} />
@@ -93,32 +94,14 @@ export default function AppNavigator() {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{
         headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: any;
-
-          if (route.name === "Home") {
-            iconName = focused ? "home" : "home-outline";
-          } else if (route.name === "Calendar") {
-            iconName = focused ? "calendar" : "calendar-outline";
-          } else if (route.name === "Profile") {
-            iconName = focused ? "account" : "account-outline";
-          }
-
-          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textSecondary,
-        tabBarStyle: {
-          backgroundColor: theme.surface,
-          borderTopColor: theme.border,
-        },
-      })}
+      }}
     >
-      <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Calendar" component={CalendarStack} />
-      <Tab.Screen name="Profile" component={ProfileStack} />
+      <Tab.Screen name="Home" component={HomeStack} options={{ title: "Home" }} />
+      <Tab.Screen name="Calendar" component={CalendarStack} options={{ title: "Calendar" }} />
+      <Tab.Screen name="Profile" component={ProfileStack} options={{ title: "Profile" }} />
     </Tab.Navigator>
   );
 }

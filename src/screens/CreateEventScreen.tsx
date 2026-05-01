@@ -1,4 +1,4 @@
-﻿import { Platform, View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Alert, ActivityIndicator } from "react-native";
+﻿import { Platform, View, Text, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator } from "react-native";
 import { useState, useContext, useMemo } from "react";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { EventContext } from "../context/EventContext";
@@ -6,6 +6,7 @@ import { ThemeContext } from "../context/ThemeContext";
 import { AuthContext } from "../context/AuthContext";
 import { createCreateEventStyles } from "../styles/CreateEventStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { useModal } from "../context/ModalContext";
 
 type LocationResult = {
   display_name: string;
@@ -31,6 +32,15 @@ export default function CreateEventScreen({ navigation }: any) {
   const { events, addEvent } = useContext(EventContext);
   const { currentUser } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
+  const { showAlert, showConfirm, showSuccess } = useModal();
+
+  const safeGoBack = () => {
+    if (navigation && typeof navigation.canGoBack === "function" && navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate("Home");
+    }
+  };
 
   const [name, setName] = useState("");
   const [venue, setVenue] = useState("");
@@ -119,7 +129,7 @@ export default function CreateEventScreen({ navigation }: any) {
 
   const handleCreate = () => {
     if (!isFormValid()) {
-      Alert.alert("Invalid Input", "Please fill in all fields correctly before saving the event.");
+      showAlert("Invalid Input", "Please fill in all fields correctly before saving the event.");
       return;
     }
 
@@ -133,7 +143,7 @@ export default function CreateEventScreen({ navigation }: any) {
     eventEndTime.setHours(endTime!.getHours(), endTime!.getMinutes());
 
     if (eventEndTime <= eventDate) {
-      Alert.alert("Invalid Time", "End time must be later than the start time.");
+      showAlert("Invalid Time", "End time must be later than the start time.");
       return;
     }
 
@@ -141,7 +151,7 @@ export default function CreateEventScreen({ navigation }: any) {
     const overlappingEvents = checkForOverlappingEvents(eventDate, eventEndTime);
     if (overlappingEvents.length > 0) {
       const eventNames = overlappingEvents.map(e => e.name).join(", ");
-      Alert.alert(
+      showAlert(
         "Overlapping Events Not Allowed",
         `This venue is unavailable during that time because it overlaps with: ${eventNames}`
       );
@@ -158,39 +168,30 @@ export default function CreateEventScreen({ navigation }: any) {
       hour12: true
     }) : null;
 
-    Alert.alert(
-      "Confirm Event Details",
-      `Event: ${name}\nVenue: ${venue}\nStart: ${eventDate.toDateString()} ${eventDate.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true })}\nEnd: ${eventEndTime.toDateString()} ${endTimeString}\nGuests: ${guests}${description ? 
-        `\nDescription: ${description}` : ''}
-      \nAre these details correct?`,
-      [
-        {
-          text: "Cancel",
-          onPress: () => {},
-          style: "cancel",
-        },
-        {
-          text: "Save",
-          onPress: () => {
-            addEvent({
-              id: Date.now().toString(),
-              userId: currentUser?.id || "guest",
-              userName: currentUser?.name || "Guest",
-              name,
-              venue,
-              date: eventDate.toISOString(),
-              guests: Number(guests),
-              latitude: 0,
-              longitude: 0,
-              description: description.trim() || undefined,
-              endTime: eventEndTime.toISOString(),
-              status: "pending",
-            });
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    showConfirm({
+      title: "Confirm Event Details",
+      message: `Event: ${name}\nVenue: ${venue}\nStart: ${eventDate.toDateString()} ${eventDate.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true })}\nEnd: ${eventEndTime.toDateString()} ${endTimeString}\nGuests: ${guests}${description ? `\nDescription: ${description}` : ''}\nAre these details correct?`,
+      cancelText: "Cancel",
+      confirmText: "Save",
+        onConfirm: () => {
+        addEvent({
+          id: Date.now().toString(),
+          userId: currentUser?.id || "guest",
+          userName: currentUser?.name || "Guest",
+          name,
+          venue,
+          date: eventDate.toISOString(),
+          guests: Number(guests),
+          latitude: 0,
+          longitude: 0,
+          description: description.trim() || undefined,
+          endTime: eventEndTime.toISOString(),
+          status: "pending",
+        });
+        showSuccess("Booking Saved", "Your booking has been saved and is now pending review.");
+        safeGoBack();
+      },
+    });
   };
 
   const handleVenueChange = (text: string) => {
@@ -280,10 +281,10 @@ export default function CreateEventScreen({ navigation }: any) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
-      <ScrollView contentContainerStyle={createStyles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={createStyles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <Text style={createStyles.header}>Create Event</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => safeGoBack()}>
             <MaterialCommunityIcons name="close" size={28} color={theme.text} />
           </TouchableOpacity>
         </View>

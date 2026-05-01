@@ -1,14 +1,16 @@
 import { useContext, useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { AuthContext } from "../context/AuthContext";
 import { ThemeContext } from "../context/ThemeContext";
 import { createAuthStyles } from "../styles/AuthStyles";
+import { useModal } from "../context/ModalContext";
 
 export default function RegisterScreen({ navigation }: any) {
   const { register } = useContext(AuthContext);
   const { theme, isDarkMode, toggleTheme } = useContext(ThemeContext);
   const styles = useMemo(() => createAuthStyles(theme), [theme]);
+  const { showAlert } = useModal();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -25,17 +27,17 @@ export default function RegisterScreen({ navigation }: any) {
     setSubmitted(true);
 
     if (!name.trim() || !username.trim() || !email.trim() || !emailIsValid || !passwordIsValid) {
-      Alert.alert("Check Details", "Fill all fields, use a valid email address, and use a password with at least 6 characters.");
+      showAlert("Check Details", "Fill all fields, use a valid email address, and use a password with at least 6 characters.");
       return;
     }
 
     const result = await register({ name, username, email, password });
-    if (!result.ok) Alert.alert("Registration Failed", result.message);
+    if (!result.ok) showAlert("Registration Failed", result.message);
   };
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         
         <Text style={styles.brand}>EventEase</Text>
         <Text style={styles.subtitle}>Create your account to start booking and tracking your events.</Text>
@@ -69,7 +71,13 @@ export default function RegisterScreen({ navigation }: any) {
             </View>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.linkButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.linkButton} onPress={() => {
+            if (navigation && typeof navigation.canGoBack === "function" && navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate("Home");
+            }
+          }}>
             <Text style={styles.linkText}>I already have an account</Text>
           
           </TouchableOpacity>

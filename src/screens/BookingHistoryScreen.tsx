@@ -21,13 +21,21 @@ export default function BookingHistoryScreen({ navigation }: any) {
         <View style={homeStyles.headerTop}>
           <View>
             <Text style={homeStyles.headerTitle}>Booking History</Text>
-            <Text style={homeStyles.headerSubtitle}>
-              {historyEvents.length} {historyEvents.length === 1 ? "booking" : "bookings"}
-            </Text>
+            <View style={{ backgroundColor: theme.primarySoft, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, alignSelf: "flex-start", marginTop: 4 }}>
+              <Text style={[homeStyles.headerSubtitle, { color: theme.primary, fontSize: 13 }]}>
+                {historyEvents.length} {historyEvents.length === 1 ? "booking" : "bookings"}
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             style={homeStyles.closeButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              if (navigation && typeof navigation.canGoBack === "function" && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate("Home");
+              }
+            }}
           >
             <MaterialCommunityIcons name="close" size={28} color={theme.text} />
           </TouchableOpacity>
@@ -41,6 +49,8 @@ export default function BookingHistoryScreen({ navigation }: any) {
             justifyContent: "center",
             alignItems: "center",
           }}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
         >
           <View style={homeStyles.emptyContainer}>
             <MaterialCommunityIcons
@@ -59,6 +69,8 @@ export default function BookingHistoryScreen({ navigation }: any) {
         <FlatList
           data={historyEvents}
           keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           renderItem={({ item }) => (
             <EventCard
               event={item}

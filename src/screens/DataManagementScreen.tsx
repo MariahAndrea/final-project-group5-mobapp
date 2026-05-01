@@ -13,10 +13,16 @@ export default function DataManagementScreen({ navigation }: any) {
   const detailsStyles = createDetailsStyles(theme);
 
   return (
-    <ScrollView style={detailsStyles.container} contentContainerStyle={detailsStyles.contentContainer}>
+    <ScrollView style={detailsStyles.container} contentContainerStyle={detailsStyles.contentContainer} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <Text style={detailsStyles.header}>Data Management</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => {
+          if (navigation && typeof navigation.canGoBack === "function" && navigation.canGoBack()) {
+            navigation.goBack();
+          } else {
+            navigation.navigate("Home");
+          }
+        }}>
           <MaterialCommunityIcons name="close" size={28} color={theme.text} />
         </TouchableOpacity>
       </View>

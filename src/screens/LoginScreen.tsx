@@ -1,14 +1,16 @@
 import { useContext, useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { AuthContext } from "../context/AuthContext";
 import { ThemeContext } from "../context/ThemeContext";
 import { createAuthStyles } from "../styles/AuthStyles";
+import { useModal } from "../context/ModalContext";
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useContext(AuthContext);
   const { theme, isDarkMode, toggleTheme } = useContext(ThemeContext);
   const styles = useMemo(() => createAuthStyles(theme), [theme]);
+  const { showAlert } = useModal();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -19,17 +21,17 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleLogin = async () => {
     if (!username.trim() || !password) {
-      Alert.alert("Missing Details", "Enter your username and password.");
+      showAlert("Missing Details", "Enter your username and password.");
       return;
     }
 
     const result = await login(username, password);
-    if (!result.ok) Alert.alert("Login Failed", result.message);
+    if (!result.ok) showAlert("Login Failed", result.message);
   };
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         
         <Text style={styles.brand}>EventEase</Text>
         <Text style={styles.subtitle}>Book events, track date availability, and manage requests from one clean workspace.</Text>
