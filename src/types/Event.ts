@@ -20,4 +20,5 @@ export type User = {
   email: string;
   password: string;
   role: "admin" | "user";
+  profilePhoto?: string; // Base64 encoded image or URI
 };

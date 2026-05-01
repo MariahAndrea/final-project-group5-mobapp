@@ -22,6 +22,7 @@ type AuthContextType = {
   register: (details: Omit<User, "id" | "role">) => Promise<{ ok: boolean; message?: string }>;
   logout: () => Promise<void>;
   updateAccount: (details: Omit<User, "id" | "role">) => Promise<{ ok: boolean; message?: string }>;
+  updateProfilePhoto: (photoUri: string) => Promise<{ ok: boolean; message?: string }>;
   deleteAccount: () => Promise<string | null>;
 };
 
@@ -163,6 +164,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { ok: true };
   };
 
+  const updateProfilePhoto = async (photoUri: string) => {
+    if (!currentUser) return { ok: false, message: "You must be logged in." };
+
+    const updatedUser: User = {
+      ...currentUser,
+      profilePhoto: photoUri,
+    };
+
+    setUsers((previous) => previous.map((user) => (user.id === currentUser.id ? updatedUser : user)));
+    setCurrentUser(updatedUser);
+    return { ok: true };
+  };
+
   const deleteAccount = async () => {
     if (!currentUser || currentUser.role === "admin") return null;
     const deletedUserId = currentUser.id;
@@ -173,7 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = useMemo(
-    () => ({ currentUser, users, isLoading, login, register, logout, updateAccount, deleteAccount }),
+    () => ({ currentUser, users, isLoading, login, register, logout, updateAccount, updateProfilePhoto, deleteAccount }),
     [currentUser, users, isLoading]
   );
 

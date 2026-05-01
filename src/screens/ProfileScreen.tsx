@@ -1,14 +1,17 @@
-import { Alert, TextInput, View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { Alert, TextInput, View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useContext, useState } from "react";
+import * as ImagePickerLib from "expo-image-picker";
 import { ThemeContext } from "../context/ThemeContext";
 import { AuthContext } from "../context/AuthContext";
 import { EventContext } from "../context/EventContext";
 import { createDetailsStyles } from "../styles/EventDetailsStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
+const ImagePicker = ImagePickerLib;
+
 export default function ProfileScreen({ navigation }: any) {
   const { theme } = useContext(ThemeContext);
-  const { currentUser, updateAccount, logout, deleteAccount } = useContext(AuthContext);
+  const { currentUser, updateAccount, updateProfilePhoto, logout, deleteAccount } = useContext(AuthContext);
   const { deleteEventsForUser } = useContext(EventContext);
   const detailsStyles = createDetailsStyles(theme);
   const [isEditing, setIsEditing] = useState(false);
@@ -81,6 +84,56 @@ export default function ProfileScreen({ navigation }: any) {
     ]);
   };
 
+  const pickImage = async (useCamera: boolean) => {
+    try {
+      const permission = useCamera 
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert("Permission Required", `We need access to your ${useCamera ? "camera" : "photo library"} to change your profile photo.`);
+        return;
+      }
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+          });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const response = await updateProfilePhoto(result.assets[0].uri);
+        if (response.ok) {
+          Alert.alert("Success", "Your profile photo has been updated!");
+        } else {
+          Alert.alert("Error", response.message || "Failed to update profile photo.");
+        }
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to pick image. Please try again.");
+    }
+  };
+
+  const showPhotoOptions = () => {
+    Alert.alert("Change Profile Photo", "How would you like to update your profile photo?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Take a Photo",
+        onPress: () => pickImage(true),
+      },
+      {
+        text: "Choose from Gallery",
+        onPress: () => pickImage(false),
+      },
+    ]);
+  };
+
   return (
     <ScrollView
       style={detailsStyles.container}
@@ -91,28 +144,57 @@ export default function ProfileScreen({ navigation }: any) {
       </View>
 
       <View style={detailsStyles.detailsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}>
-          <MaterialCommunityIcons
-            name={isAdmin ? "shield-account" : "account-circle"}
-            size={24}
-            color={theme.primary}
-            style={{ marginRight: 16 }}
-          />
-          <View style={{ flex: 1 }}>
+        <TouchableOpacity onPress={showPhotoOptions} style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}>
+          <View style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: theme.primarySoft,
+            justifyContent: "center",
+            alignItems: "center",
+            marginRight: 16,
+            marginTop: 4,
+            overflow: "hidden",
+          }}>
+            {currentUser?.profilePhoto ? (
+              <Image
+                source={{ uri: currentUser.profilePhoto }}
+                style={{ width: 64, height: 64, borderRadius: 32 }}
+              />
+            ) : (
+              <MaterialCommunityIcons
+                name="account"
+                size={40}
+                color={theme.primary}
+              />
+            )}
+          </View>
+          <View style={{ flex: 1, paddingTop: 4 }}>
             <Text style={detailsStyles.text}>{currentUser?.name}</Text>
             <Text style={detailsStyles.textSecondary}>{currentUser?.username} - {currentUser?.role}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={detailsStyles.detailsCard}>
-        <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12 }}>
-          <MaterialCommunityIcons name="account-edit" size={24} color={theme.primary} style={{ marginRight: 16 }} />
-          <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}>
+          <View style={{
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            backgroundColor: theme.primarySoft,
+            justifyContent: "center",
+            alignItems: "center",
+            marginRight: 16,
+            marginTop: 2,
+          }}>
+            <MaterialCommunityIcons name="account-edit" size={20} color={theme.primary} />
+          </View>
+          <View style={{ flex: 1, paddingTop: 2 }}>
             <Text style={detailsStyles.text}>Account Details</Text>
             <Text style={detailsStyles.textSecondary}>Review your name, username, email, and password</Text>
           </View>
-          <MaterialCommunityIcons name={isEditing ? "chevron-up" : "lock-outline"} size={24} color={theme.textSecondary} />
+          <MaterialCommunityIcons name={isEditing ? "chevron-up" : "lock-outline"} size={24} color={theme.textSecondary} style={{ marginLeft: 8 }} />
         </View>
         {!isEditing && (
           <TouchableOpacity style={detailsStyles.secondaryButton} onPress={() => setIsEditing(true)}>
@@ -158,35 +240,56 @@ export default function ProfileScreen({ navigation }: any) {
       {isAdmin && (
         <View style={detailsStyles.detailsCard}>
           <TouchableOpacity
-            style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12 }}
+            style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}
             onPress={() => navigation.navigate("DataManagement")}
           >
-            <MaterialCommunityIcons name="database-cog" size={24} color={theme.primary} style={{ marginRight: 16 }} />
-            <View style={{ flex: 1 }}>
+            <View style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              backgroundColor: theme.primarySoft,
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: 16,
+              marginTop: 2,
+            }}>
+              <MaterialCommunityIcons name="database-cog" size={20} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1, paddingTop: 2 }}>
               <Text style={detailsStyles.text}>Data Management</Text>
               <Text style={detailsStyles.textSecondary}>View all accounts and local booking data</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={24} color={theme.textSecondary} />
+            <MaterialCommunityIcons name="chevron-right" size={24} color={theme.textSecondary} style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         </View>
       )}
 
       <View style={detailsStyles.detailsCard}>
         <TouchableOpacity
-          style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12 }}
+          style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}
           onPress={() => navigation.navigate("BookingHistory")}
         >
-          <MaterialCommunityIcons
-            name="history"
-            size={24}
-            color={theme.primary}
-            style={{ marginRight: 16 }}
-          />
-          <View style={{ flex: 1 }}>
+          <View style={{
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            backgroundColor: theme.primarySoft,
+            justifyContent: "center",
+            alignItems: "center",
+            marginRight: 16,
+            marginTop: 2,
+          }}>
+            <MaterialCommunityIcons
+              name="history"
+              size={20}
+              color={theme.primary}
+            />
+          </View>
+          <View style={{ flex: 1, paddingTop: 2 }}>
             <Text style={detailsStyles.text}>Booking History</Text>
             <Text style={detailsStyles.textSecondary}>View your past event bookings</Text>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color={theme.textSecondary} />
+          <MaterialCommunityIcons name="chevron-right" size={24} color={theme.textSecondary} style={{ marginLeft: 8 }} />
         </TouchableOpacity>
       </View>
 

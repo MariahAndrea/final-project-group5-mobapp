@@ -41,22 +41,35 @@ export default function EventDetailsScreen({ route, navigation }: any) {
 
   if (!event) return null;
 
-  const eventDate = new Date(event.date);
-  const dateString = eventDate.toLocaleDateString("en-US", {
+  const startDate = new Date(event.date);
+  const endDate = event.endTime ? new Date(event.endTime) : startDate;
+  
+  const startDateString = startDate.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
   });
-  const timeString = eventDate.toLocaleTimeString("en-US", {
+  const endDateString = endDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  
+  const startTimeString = startDate.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
   });
-  const endTimeString = event.endTime ? new Date(event.endTime).toLocaleTimeString("en-US", {
+  const endTimeString = endDate.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
-  }) : null;
+  });
+  
+  const dateDisplayString = startDateString === endDateString 
+    ? startDateString 
+    : `${startDateString} - ${endDateString}`;
+  const timeDisplayString = `${startTimeString} - ${endTimeString}`;
   const statusLabel =
     event.status === "pending"
       ? "Pending"
@@ -67,8 +80,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   const isReadOnly = event.status === "cancelled";
   const detailItems = [
     { label: "Venue", value: event.venue, icon: "map-marker" as const },
-    { label: "Date", value: dateString, icon: "calendar" as const },
-    { label: "Time", value: `${timeString}${endTimeString ? ` - ${endTimeString}` : ""}`, icon: "clock-outline" as const },
+    { label: "Date", value: dateDisplayString, icon: "calendar" as const },
+    { label: "Time", value: timeDisplayString, icon: "clock-outline" as const },
     {
       label: "Guests",
       value: `${event.guests} ${event.guests === 1 ? "guest" : "guests"} attending`,
@@ -81,8 +94,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     `Event: ${event.name}`,
     `Booked by: ${event.userName}`,
     `Venue: ${event.venue}`,
-    `Date: ${dateString}`,
-    `Time: ${timeString}${endTimeString ? ` - ${endTimeString}` : ""}`,
+    `Date: ${dateDisplayString}`,
+    `Time: ${timeDisplayString}`,
     `Guests: ${event.guests}`,
     event.description ? `Description: ${event.description}` : null,
   ]
@@ -119,22 +132,26 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       </View>
 
       <View style={detailsStyles.heroCard}>
-        <View style={detailsStyles.heroIcon}>
-          <MaterialCommunityIcons name="calendar-star" size={26} color={theme.primary} />
+        <View style={detailsStyles.heroCardTop}>
+          <View style={{ flex: 1 }}>
+            <View style={detailsStyles.heroIcon}>
+              <MaterialCommunityIcons name="calendar-star" size={26} color={theme.primary} />
+            </View>
+          </View>
+          <View
+            style={[
+              detailsStyles.statusPill,
+              {
+                borderColor: statusColor,
+                backgroundColor: event.status === "cancelled" ? theme.errorBackground : theme.primarySoft,
+              },
+            ]}
+          >
+            <Text style={[detailsStyles.statusPillText, { color: statusColor }]}>{statusLabel}</Text>
+          </View>
         </View>
         <Text style={detailsStyles.header} numberOfLines={3}>{event.name}</Text>
         <Text style={detailsStyles.textSecondary}>{event.venue}</Text>
-        <View
-          style={[
-            detailsStyles.statusPill,
-            {
-              borderColor: statusColor,
-              backgroundColor: event.status === "cancelled" ? theme.errorBackground : theme.primarySoft,
-            },
-          ]}
-        >
-          <Text style={[detailsStyles.statusPillText, { color: statusColor }]}>{statusLabel}</Text>
-        </View>
       </View>
 
       <View style={detailsStyles.detailsGrid}>

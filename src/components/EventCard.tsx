@@ -26,15 +26,34 @@ export default function EventCard({
   const [showActions, setShowActions] = useState(false);
   const actionAnim = useRef(new Animated.Value(0)).current;
 
-  const eventDate = new Date(event.date);
-  const dateString = eventDate.toLocaleDateString("en-US", {
+  const startDate = new Date(event.date);
+  const endDate = new Date(event.endTime);
+  
+  const startDateString = startDate.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
-  const timeString = eventDate.toLocaleTimeString("en-US", {
+  const endDateString = endDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+  
+  const startTimeString = startDate.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const endTimeString = endDate.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  
+  // Display efficiently: if same day, show "May 1, 2:00 PM - 4:00 PM"
+  // If different days, show "May 1 - May 2, 2:00 PM - 4:00 PM"
+  const isSameDay = startDate.toDateString() === endDate.toDateString();
+  const dateDisplay = isSameDay 
+    ? startDateString 
+    : `${startDateString} - ${endDateString}`;
+  const timeDisplay = `${startTimeString} - ${endTimeString}`;
 
   const handleLongPress = () => {
     setShowActions(true);
@@ -68,31 +87,10 @@ export default function EventCard({
       onLongPress={handleLongPress}
       activeOpacity={0.8}
     >
-      <View>
-        <Text style={cardStyles.title}>{event.name}</Text>
-        <Text style={cardStyles.subtitle}>{event.venue}</Text>
-        {event.userName && <Text style={cardStyles.meta}>Booked by {event.userName}</Text>}
-      </View>
-      <View style={cardStyles.detailsContainer}>
-        <View>
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-            <MaterialCommunityIcons
-              name="calendar"
-              size={14}
-              color={theme.textSecondary}
-              style={{ marginRight: 6 }}
-            />
-            <Text style={cardStyles.details}>{dateString}</Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <MaterialCommunityIcons
-              name="clock"
-              size={14}
-              color={theme.textSecondary}
-              style={{ marginRight: 6 }}
-            />
-            <Text style={cardStyles.details}>{timeString}</Text>
-          </View>
+      <View style={cardStyles.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={cardStyles.title}>{event.name}</Text>
+          {event.userName && <Text style={cardStyles.meta}>Booked by {event.userName}</Text>}
         </View>
         <View
           style={[
@@ -106,6 +104,35 @@ export default function EventCard({
           <Text style={[cardStyles.statusText, { color: getStatusColor(event.status) }]}>
             {event.status.toUpperCase()}
           </Text>
+        </View>
+      </View>
+      <View style={cardStyles.detailsContainer}>
+        <View style={cardStyles.detailRow}>
+          <MaterialCommunityIcons
+            name="map-marker"
+            size={14}
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={cardStyles.details}>{event.venue}</Text>
+        </View>
+        <View style={cardStyles.detailRow}>
+          <MaterialCommunityIcons
+            name="calendar"
+            size={14}
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={cardStyles.details}>{dateDisplay}</Text>
+        </View>
+        <View style={cardStyles.detailRow}>
+          <MaterialCommunityIcons
+            name="clock"
+            size={14}
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={cardStyles.details}>{timeDisplay}</Text>
         </View>
       </View>
       {showActions && (
