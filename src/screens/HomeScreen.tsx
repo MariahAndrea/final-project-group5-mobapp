@@ -1,5 +1,5 @@
-import { View, Text, FlatList, TouchableOpacity, ScrollView, Alert } from "react-native";
-import { useContext } from "react";
+import { View, Text, FlatList, TouchableOpacity, ScrollView, Alert, Modal } from "react-native";
+import { useContext, useState } from "react";
 import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
 import { AuthContext } from "../context/AuthContext";
@@ -13,7 +13,16 @@ export default function HomeScreen({ navigation }: any) {
   const { theme, isDarkMode, toggleTheme } = useContext(ThemeContext);
   const homeStyles = createHomeStyles(theme);
   const isAdmin = currentUser?.role === "admin";
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "completed">("all");
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  
   const dashboardEvents = visibleEvents.filter((event) => event.status !== "cancelled");
+  
+  const filteredEvents = dashboardEvents.filter((event) => {
+    if (statusFilter === "pending") return event.status === "pending";
+    if (statusFilter === "completed") return event.status === "confirmed";
+    return true;
+  });
 
   const handleDeleteEvent = (id: string, eventName: string) => {
     Alert.alert(
@@ -88,7 +97,7 @@ export default function HomeScreen({ navigation }: any) {
     <View style={homeStyles.container}>
       <View style={homeStyles.header}>
         <View style={homeStyles.headerTop}>
-          <View>
+          <View style={homeStyles.headerTextBlock}>
             <Text style={homeStyles.headerTitle}>EventEase</Text>
             <Text style={homeStyles.headerDescription}>
               {isAdmin
@@ -96,40 +105,25 @@ export default function HomeScreen({ navigation }: any) {
                 : "Create bookings and keep your schedule organized."}
             </Text>
             <Text style={homeStyles.headerSubtitle}>
-              {dashboardEvents.length} {dashboardEvents.length === 1 ? "booking" : "bookings"}
+              {filteredEvents.length} {filteredEvents.length === 1 ? "booking" : "bookings"}
             </Text>
           </View>
-          <TouchableOpacity
-            style={homeStyles.themeButton}
-            onPress={toggleTheme}
-          >
-            <MaterialCommunityIcons
-              name={isDarkMode ? "white-balance-sunny" : "moon-waning-crescent"}
-              size={20}
-              color={theme.primary}
-            />
-          </TouchableOpacity>
-        </View>
-        <View style={homeStyles.primaryActions}>
-          <TouchableOpacity
-            style={homeStyles.secondaryButton}
-            onPress={() => navigation.navigate("Calendar")}
-          >
-            <MaterialCommunityIcons name="calendar-month" size={18} color={theme.primary} />
-            <Text style={homeStyles.secondaryButtonText}>Calendar</Text>
-          </TouchableOpacity>
-          {!isAdmin && (
+          <View style={homeStyles.headerButtons}>
             <TouchableOpacity
-              style={homeStyles.createButton}
-              onPress={() => navigation.navigate("Create")}
+              style={homeStyles.themeButton}
+              onPress={toggleTheme}
             >
-              <Text style={homeStyles.createButtonText}>+ Add Event</Text>
+              <MaterialCommunityIcons
+                name={isDarkMode ? "white-balance-sunny" : "moon-waning-crescent"}
+                size={20}
+                color={theme.primary}
+              />
             </TouchableOpacity>
-          )}
+          </View>
         </View>
       </View>
 
-      {dashboardEvents.length === 0 ? (
+      {filteredEvents.length === 0 ? (
         <ScrollView
           contentContainerStyle={{
             flex: 1,
@@ -152,7 +146,7 @@ export default function HomeScreen({ navigation }: any) {
         </ScrollView>
       ) : (
         <FlatList
-          data={dashboardEvents}
+          data={filteredEvents}
           keyExtractor={(item) => item.id}
           contentContainerStyle={homeStyles.listContent}
           renderItem={({ item }) => (
@@ -166,6 +160,55 @@ export default function HomeScreen({ navigation }: any) {
             />
           )}
         />
+      )}
+
+      <TouchableOpacity 
+        style={homeStyles.floatingFilterButton}
+        onPress={() => setFilterDropdownOpen(!filterDropdownOpen)}
+      >
+        <MaterialCommunityIcons name="filter-variant" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+      
+      {filterDropdownOpen && (
+        <View style={homeStyles.filterDropdownFloating}>
+          <TouchableOpacity 
+            style={homeStyles.filterOption}
+            onPress={() => {
+              setStatusFilter("all");
+              setFilterDropdownOpen(false);
+            }}
+          >
+            <Text style={[homeStyles.filterOptionText, statusFilter === "all" && homeStyles.filterOptionActive]}>All</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={homeStyles.filterOption}
+            onPress={() => {
+              setStatusFilter("pending");
+              setFilterDropdownOpen(false);
+            }}
+          >
+            <Text style={[homeStyles.filterOptionText, statusFilter === "pending" && homeStyles.filterOptionActive]}>Pending</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={homeStyles.filterOption}
+            onPress={() => {
+              setStatusFilter("completed");
+              setFilterDropdownOpen(false);
+            }}
+          >
+            <Text style={[homeStyles.filterOptionText, statusFilter === "completed" && homeStyles.filterOptionActive]}>Completed</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!isAdmin && (
+        <TouchableOpacity
+          style={homeStyles.floatingAddButton}
+          onPress={() => navigation.navigate("Create")}
+          activeOpacity={0.85}
+        >
+          <MaterialCommunityIcons name="plus" size={30} color="#FFFFFF" />
+        </TouchableOpacity>
       )}
     </View>
   );
