@@ -29,14 +29,15 @@ export const createDetailsStyles = (theme: Theme) =>
     },
     text: {
       fontSize: 16,
-      marginBottom: 12,
+      marginBottom: 8,
       color: theme.text,
       lineHeight: 24,
+      fontWeight: 'bold',
     },
     textSecondary: {
       fontSize: 14,
       color: theme.textSecondary,
-      marginBottom: 8,
+      marginBottom: 5,
     },
     detailsCard: {
       backgroundColor: theme.surface,

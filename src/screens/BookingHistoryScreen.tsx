@@ -21,15 +21,12 @@ export default function BookingHistoryScreen({ navigation }: any) {
         <View style={homeStyles.headerTop}>
           <View>
             <Text style={homeStyles.headerTitle}>Booking History</Text>
-            <Text style={homeStyles.headerDescription}>
-              View past and deleted bookings.
-            </Text>
             <Text style={homeStyles.headerSubtitle}>
               {historyEvents.length} {historyEvents.length === 1 ? "booking" : "bookings"}
             </Text>
           </View>
           <TouchableOpacity
-            style={homeStyles.themeButton}
+            style={homeStyles.closeButton}
             onPress={() => navigation.goBack()}
           >
             <MaterialCommunityIcons name="close" size={28} color={theme.text} />

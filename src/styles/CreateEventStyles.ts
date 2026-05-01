@@ -23,7 +23,7 @@ export const createCreateEventStyles = (theme: Theme) =>
       backgroundColor: theme.surface,
       paddingHorizontal: 14,
       paddingVertical: 15,
-      marginBottom: 16,
+      marginBottom: 8,
       borderRadius: 8,
       fontSize: 16,
       color: theme.text,

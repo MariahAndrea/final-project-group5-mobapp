@@ -32,6 +32,17 @@ const withoutDuplicateAdmin = (users: User[]) =>
 
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+const readItem = async (key: string): Promise<string | null> => {
+  const result = await AsyncStorage.getItem(key);
+  if (result === null || result === undefined) return null;
+  if (typeof result === "string") return result;
+
+  if (typeof result === "object" && "value" in (result as any)) {
+    return (result as any).value ?? null;
+  }
+  return null;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>([adminUser]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -41,8 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const hydrate = async () => {
       try {
         const [storedUsers, storedSession] = await Promise.all([
-          AsyncStorage.getItem(USERS_KEY),
-          AsyncStorage.getItem(SESSION_KEY),
+          readItem(USERS_KEY),
+          readItem(SESSION_KEY),
         ]);
         const parsedUsers: User[] = storedUsers ? JSON.parse(storedUsers) : [];
         const nextUsers = [adminUser, ...withoutDuplicateAdmin(parsedUsers)];

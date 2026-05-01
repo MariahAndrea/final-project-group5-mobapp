@@ -35,9 +35,11 @@ export default function CreateEventScreen({ navigation }: any) {
   const [name, setName] = useState("");
   const [venue, setVenue] = useState("");
   const [date, setDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [time, setTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [guests, setGuests] = useState("");
@@ -46,6 +48,7 @@ export default function CreateEventScreen({ navigation }: any) {
   const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
+  const [tempEndDate, setTempEndDate] = useState<Date | null>(null);
   const [tempTime, setTempTime] = useState<Date | null>(null);
   const [tempEndTime, setTempEndTime] = useState<Date | null>(null);
 
@@ -56,6 +59,19 @@ export default function CreateEventScreen({ navigation }: any) {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  };
+
+  const handleEndDateChange = (_: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      if (selectedDate) {
+        setEndDate(selectedDate);
+      }
+      setShowEndDatePicker(false);
+    } else {
+      if (selectedDate) {
+        setTempEndDate(selectedDate);
+      }
+    }
   };
 
   const checkForOverlappingEvents = (eventDate: Date, eventEndTime: Date) => {
@@ -92,6 +108,7 @@ export default function CreateEventScreen({ navigation }: any) {
       name.trim().length > 0 &&
       venue.trim().length > 0 &&
       date !== null &&
+      endDate !== null &&
       time !== null &&
       endTime !== null &&
       guests.trim().length > 0 &&
@@ -106,13 +123,13 @@ export default function CreateEventScreen({ navigation }: any) {
       return;
     }
 
-    const eventDate = date ? new Date(date) : new Date();
+    const eventDate = new Date(date!);
     if (time) {
       eventDate.setHours(time.getHours(), time.getMinutes());
     }
 
     // Create proper end time with correct date
-    const eventEndTime = new Date(eventDate);
+    const eventEndTime = new Date(endDate!); 
     eventEndTime.setHours(endTime!.getHours(), endTime!.getMinutes());
 
     if (eventEndTime <= eventDate) {
@@ -143,11 +160,9 @@ export default function CreateEventScreen({ navigation }: any) {
 
     Alert.alert(
       "Confirm Event Details",
-      `Event: ${name}\nVenue: ${venue}\nDate: ${eventDate.toDateString()}\nTime: ${eventDate.toLocaleTimeString("en-US", {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })}${endTimeString ? ` - ${endTimeString}` : ''}\nGuests: ${guests}${description ? `\nDescription: ${description}` : ''}\n\nAre these details correct?`,
+      `Event: ${name}\nVenue: ${venue}\nStart: ${eventDate.toDateString()} ${eventDate.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true })}\nEnd: ${eventEndTime.toDateString()} ${endTimeString}\nGuests: ${guests}${description ? 
+        `\nDescription: ${description}` : ''}
+      \nAre these details correct?`,
       [
         {
           text: "Cancel",
@@ -291,41 +306,62 @@ export default function CreateEventScreen({ navigation }: any) {
           createStyles={createStyles}
         />
 
-        <View style={{ marginBottom: 16 }}>
+        <View style={{ marginBottom: 16}}>
           <Text style={createStyles.label}>Venue</Text>
-          <TextInput
-            placeholder="Search for a venue..."
-            onChangeText={handleVenueChange}
-            style={createStyles.input}
-            value={venue}
-            placeholderTextColor={theme.textSecondary}
-          />
-          {isSearching && (
-            <View style={{ paddingVertical: 12, alignItems: "center" }}>
-              <ActivityIndicator size="small" color={theme.primary} />
-              <Text style={{ marginTop: 8, color: theme.textSecondary, fontSize: 13 }}>Searching venues...</Text>
+
+          <View style={[
+            createStyles.input, 
+              { 
+                flexDirection: 'row', 
+                alignItems: 'center', 
+                paddingVertical: 2,
+              }
+            ]}>
+              <MaterialCommunityIcons 
+                name="map-marker-outline" 
+                size={20} 
+                color={theme.primary} 
+                style={{ marginRight: 8 }} 
+              />
+            <TextInput
+              placeholder="Search for a venue..."
+              onChangeText={handleVenueChange}
+              value={venue}
+              placeholderTextColor={theme.textSecondary}
+              style={{
+                flex: 1,
+                height: 48,
+                color: theme.text,
+                fontSize: 16,
+              }}
+            />
             </View>
-          )}
-          {results.length > 0 && (
-            <View style={createStyles.resultsContainer}>
-              {results.map((item) => (
-                <TouchableOpacity
-                  key={`${item.lat}-${item.lon}`}
-                  style={createStyles.resultItem}
-                  onPress={() => handleSelectResult(item)}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <MaterialCommunityIcons name="map-marker" size={16} color={theme.primary} style={{ marginRight: 8 }} />
-                    <Text style={createStyles.resultText}>{item.display_name}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+            {isSearching && (
+              <View style={{ paddingVertical: 12, alignItems: "center" }}>
+                <ActivityIndicator size="small" color={theme.primary} />
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>Searching venues...</Text>
+              </View>
+            )}
+            {results.length > 0 && (
+              <View style={createStyles.resultsContainer}>
+                {results.map((item) => (
+                  <TouchableOpacity
+                    key={`${item.lat}-${item.lon}`}
+                    style={createStyles.resultItem}
+                    onPress={() => handleSelectResult(item)}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <MaterialCommunityIcons name="map-marker" size={16} color={theme.primary} style={{ marginRight: 8 }} />
+                      <Text style={createStyles.resultText}>{item.display_name}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
         </View>
 
         <View style={{ marginBottom: 16 }}>
-          <Text style={createStyles.label}>Date</Text>
+          <Text style={createStyles.label}>Start Date</Text>
           <TouchableOpacity
             onPress={() => {
               setTempDate(date || getPickerDefault());
@@ -336,7 +372,7 @@ export default function CreateEventScreen({ navigation }: any) {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <MaterialCommunityIcons name="calendar" size={20} color={theme.primary} style={{ marginRight: 10 }} />
               <Text style={{ color: date ? theme.text : theme.textSecondary, fontSize: 16 }}>
-                {date ? date.toDateString() : "Pick a date"}
+                {date ? date.toDateString() : "Pick start date"}
               </Text>
             </View>
           </TouchableOpacity>
@@ -354,6 +390,46 @@ export default function CreateEventScreen({ navigation }: any) {
               onPress={() => {
                 setDate(tempDate || getPickerDefault());
                 setShowDatePicker(false);
+              }}
+              style={[createStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
+            >
+              <Text style={{ color: "#FFFFFF", fontWeight: "600", textAlign: "center" }}>Done</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={{ marginBottom: 16 }}>
+          <Text style={createStyles.label}>End Date</Text>
+          <TouchableOpacity
+            onPress={() => {
+              setTempEndDate(endDate || date || getPickerDefault());
+              setShowEndDatePicker(true);
+            }}
+            style={[createStyles.input, { justifyContent: "center", paddingVertical: 16 }]}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <MaterialCommunityIcons name="calendar-range" size={20} color={theme.primary} style={{ marginRight: 10 }} />
+              <Text style={{ color: endDate ? theme.text : theme.textSecondary, fontSize: 16 }}>
+                {endDate ? endDate.toDateString() : "Pick end date"}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {showEndDatePicker && (
+            <DateTimePicker
+              value={Platform.OS === 'ios' ? (tempEndDate || new Date()) : (endDate || new Date())}
+              mode="date"
+              minimumDate={date || new Date()} 
+              display={Platform.OS === "ios" ? "spinner" : "calendar"}
+              onChange={handleEndDateChange}
+            />
+          )}
+
+          {Platform.OS === 'ios' && showEndDatePicker && (
+            <TouchableOpacity
+              onPress={() => {
+                setEndDate(tempEndDate || date || getPickerDefault());
+                setShowEndDatePicker(false);
               }}
               style={[createStyles.input, { backgroundColor: theme.primary, marginTop: 8 }]}
             >

@@ -35,7 +35,9 @@ export default function DataManagementScreen({ navigation }: any) {
               <Text style={detailsStyles.accountName}>{user.name}</Text>
               <Text style={detailsStyles.accountDetail}>Username: {user.username}</Text>
               <Text style={detailsStyles.accountDetail}>Email: {user.email}</Text>
-              <Text style={detailsStyles.accountDetail}>Password: {user.password}</Text>
+              <Text style={detailsStyles.accountDetail}>
+                Password: {"•".repeat(user.password.length)}
+              </Text>
             </View>
             <Text style={detailsStyles.roleBadge}>{user.role}</Text>
           </View>

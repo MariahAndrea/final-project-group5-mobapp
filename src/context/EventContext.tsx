@@ -47,11 +47,16 @@ export const EventProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const hydrate = async () => {
-      const storedEvents = await AsyncStorage.getItem(EVENTS_KEY);
-      if (storedEvents) {
-        setEvents(JSON.parse(storedEvents));
+      try{
+        const storedEvents = await AsyncStorage.getItem(EVENTS_KEY);
+        if (storedEvents) {
+          setEvents(JSON.parse(storedEvents));
+        }
+      } catch (e) {
+        console.warn("[EventContext] Failed to hydrate from storage:", e);
+      } finally {
+        setHasHydrated(true);
       }
-      setHasHydrated(true);
     };
 
     hydrate();
