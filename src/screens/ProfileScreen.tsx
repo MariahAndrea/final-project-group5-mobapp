@@ -157,24 +157,43 @@ export default function ProfileScreen({ navigation }: any) {
 
       <View style={detailsStyles.detailsCard}>
         <TouchableOpacity onPress={showPhotoOptions} style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12 }}>
-          <View
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: 32,
-              backgroundColor: theme.primarySoft,
-              justifyContent: "center",
-              alignItems: "center",
-              marginRight: 16,
-              marginTop: 4,
-              overflow: "hidden",
-            }}
-          >
-            {currentUser?.profilePhoto ? (
-              <Image source={{ uri: currentUser.profilePhoto }} style={{ width: 64, height: 64, borderRadius: 32 }} />
-            ) : (
-              <MaterialCommunityIcons name="account" size={40} color={theme.primary} />
-            )}
+          <View style={{ position: "relative" }}>
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: theme.primarySoft,
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 16,
+                marginTop: 4,
+                overflow: "hidden",
+              }}
+            >
+              {currentUser?.profilePhoto ? (
+                <Image source={{ uri: currentUser.profilePhoto }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+              ) : (
+                <MaterialCommunityIcons name="account" size={40} color={theme.primary} />
+              )}
+            </View>
+            <View
+              style={{
+                position: "absolute",
+                bottom: -2,
+                right: 12,
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: theme.primary,
+                justifyContent: "center",
+                alignItems: "center",
+                borderWidth: 2,
+                borderColor: theme.surface,
+              }}
+            >
+              <MaterialCommunityIcons name="pencil" size={14} color={theme.surface} />
+            </View>
           </View>
           <View style={{ flex: 1, paddingTop: 4 }}>
             <Text style={detailsStyles.text}>{currentUser?.name}</Text>

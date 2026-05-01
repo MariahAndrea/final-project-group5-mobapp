@@ -94,9 +94,11 @@ export default function CalendarScreen({ navigation }: any) {
       <View style={calendarStyles.header}>
         <View>
           <Text style={calendarStyles.headerTitle}>Calendar</Text>
-          <Text style={calendarStyles.headerSubtitle}>
-            {calendarEvents.length} {calendarEvents.length === 1 ? "booking" : "bookings"} tracked
-          </Text>
+          <View style={{ backgroundColor: theme.primarySoft, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, alignSelf: "flex-start", marginTop: 4 }}>
+            <Text style={[calendarStyles.headerSubtitle, { color: theme.primary, fontSize: 13 }]}>
+              {calendarEvents.length} {calendarEvents.length === 1 ? "booking" : "bookings"} tracked
+            </Text>
+          </View>
         </View>
       </View>
 

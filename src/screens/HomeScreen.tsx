@@ -1,5 +1,5 @@
-import { View, Text, FlatList, TouchableOpacity, ScrollView, Modal } from "react-native";
-import { useContext, useState } from "react";
+import { View, Text, FlatList, TouchableOpacity, ScrollView, Modal, TextInput, Animated } from "react-native";
+import { useContext, useState, useRef, useEffect } from "react";
 import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
 import { AuthContext } from "../context/AuthContext";
@@ -16,7 +16,20 @@ export default function HomeScreen({ navigation }: any) {
   const isAdmin = currentUser?.role === "admin";
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "completed">("all");
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { showConfirm } = useModal();
+  const dropdownAnimated = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (filterDropdownOpen) {
+      dropdownAnimated.setValue(0);
+    }
+    Animated.timing(dropdownAnimated, {
+      toValue: filterDropdownOpen ? 1 : 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [filterDropdownOpen, dropdownAnimated]);
   
   const dashboardEvents = visibleEvents.filter((event) => event.status !== "cancelled");
   
@@ -24,7 +37,11 @@ export default function HomeScreen({ navigation }: any) {
     if (statusFilter === "pending") return event.status === "pending";
     if (statusFilter === "completed") return event.status === "confirmed";
     return true;
-  });
+  }).filter((event) =>
+    event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.userName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleDeleteEvent = (id: string, eventName: string) => {
     showConfirm({
@@ -87,14 +104,11 @@ export default function HomeScreen({ navigation }: any) {
         <View style={homeStyles.headerTop}>
           <View style={homeStyles.headerTextBlock}>
             <Text style={homeStyles.headerTitle}>EventEase</Text>
-            <Text style={homeStyles.headerDescription}>
-              {isAdmin
-                ? "Review booking requests and keep availability accurate."
-                : "Create bookings and keep your schedule organized."}
-            </Text>
-            <Text style={homeStyles.headerSubtitle}>
-              {filteredEvents.length} {filteredEvents.length === 1 ? "booking" : "bookings"}
-            </Text>
+            <View style={{ backgroundColor: theme.primarySoft, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, alignSelf: "flex-start", marginTop: 4 }}>
+              <Text style={[homeStyles.headerSubtitle, { color: theme.primary, fontSize: 13 }]}>
+                {filteredEvents.length} {filteredEvents.length === 1 ? "booking" : "bookings"}
+              </Text>
+            </View>
           </View>
           <View style={homeStyles.headerButtons}>
             <TouchableOpacity
@@ -110,6 +124,79 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         </View>
       </View>
+
+      <View style={{ paddingHorizontal: 16, paddingVertical: 12, flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12 }}>
+          <MaterialCommunityIcons name="magnify" size={20} color={theme.textSecondary} />
+          <TextInput
+            placeholder="Search events..."
+            placeholderTextColor={theme.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 8, color: theme.text, fontSize: 14 }}
+          />
+        </View>
+        <TouchableOpacity
+          style={{ padding: 10, backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border }}
+          onPress={() => setFilterDropdownOpen(!filterDropdownOpen)}
+        >
+          <MaterialCommunityIcons name="filter-variant" size={20} color={theme.primary} />
+        </TouchableOpacity>
+      </View>
+
+      {filterDropdownOpen && (
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 170,
+            right: 16,
+            width: 130,
+            backgroundColor: theme.surface,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: theme.border,
+            overflow: "hidden",
+            zIndex: 10,
+            opacity: dropdownAnimated,
+            transform: [
+              {
+                translateY: dropdownAnimated.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-10, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <TouchableOpacity
+            style={{ paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: theme.border }}
+            onPress={() => {
+              setStatusFilter("all");
+              setFilterDropdownOpen(false);
+            }}
+          >
+            <Text style={[{ color: theme.text, fontSize: 13, fontWeight: statusFilter === "all" ? "600" : "400" }]}>All</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: theme.border }}
+            onPress={() => {
+              setStatusFilter("pending");
+              setFilterDropdownOpen(false);
+            }}
+          >
+            <Text style={[{ color: theme.text, fontSize: 13, fontWeight: statusFilter === "pending" ? "600" : "400" }]}>Pending</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ paddingVertical: 10, paddingHorizontal: 14 }}
+            onPress={() => {
+              setStatusFilter("completed");
+              setFilterDropdownOpen(false);
+            }}
+          >
+            <Text style={[{ color: theme.text, fontSize: 13, fontWeight: statusFilter === "completed" ? "600" : "400" }]}>Completed</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {filteredEvents.length === 0 ? (
         <ScrollView
@@ -152,45 +239,6 @@ export default function HomeScreen({ navigation }: any) {
             />
           )}
         />
-      )}
-
-      <TouchableOpacity 
-        style={homeStyles.floatingFilterButton}
-        onPress={() => setFilterDropdownOpen(!filterDropdownOpen)}
-      >
-        <MaterialCommunityIcons name="filter-variant" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-      
-      {filterDropdownOpen && (
-        <View style={homeStyles.filterDropdownFloating}>
-          <TouchableOpacity 
-            style={homeStyles.filterOption}
-            onPress={() => {
-              setStatusFilter("all");
-              setFilterDropdownOpen(false);
-            }}
-          >
-            <Text style={[homeStyles.filterOptionText, statusFilter === "all" && homeStyles.filterOptionActive]}>All</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={homeStyles.filterOption}
-            onPress={() => {
-              setStatusFilter("pending");
-              setFilterDropdownOpen(false);
-            }}
-          >
-            <Text style={[homeStyles.filterOptionText, statusFilter === "pending" && homeStyles.filterOptionActive]}>Pending</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={homeStyles.filterOption}
-            onPress={() => {
-              setStatusFilter("completed");
-              setFilterDropdownOpen(false);
-            }}
-          >
-            <Text style={[homeStyles.filterOptionText, statusFilter === "completed" && homeStyles.filterOptionActive]}>Completed</Text>
-          </TouchableOpacity>
-        </View>
       )}
 
       {!isAdmin && (

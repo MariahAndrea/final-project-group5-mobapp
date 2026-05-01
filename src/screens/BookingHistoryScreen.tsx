@@ -21,9 +21,11 @@ export default function BookingHistoryScreen({ navigation }: any) {
         <View style={homeStyles.headerTop}>
           <View>
             <Text style={homeStyles.headerTitle}>Booking History</Text>
-            <Text style={homeStyles.headerSubtitle}>
-              {historyEvents.length} {historyEvents.length === 1 ? "booking" : "bookings"}
-            </Text>
+            <View style={{ backgroundColor: theme.primarySoft, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, alignSelf: "flex-start", marginTop: 4 }}>
+              <Text style={[homeStyles.headerSubtitle, { color: theme.primary, fontSize: 13 }]}>
+                {historyEvents.length} {historyEvents.length === 1 ? "booking" : "bookings"}
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             style={homeStyles.closeButton}
