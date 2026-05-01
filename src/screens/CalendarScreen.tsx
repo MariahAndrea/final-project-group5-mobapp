@@ -100,7 +100,7 @@ export default function CalendarScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={calendarStyles.content}>
+      <ScrollView contentContainerStyle={calendarStyles.content} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={calendarStyles.monthBar}>
           <TouchableOpacity
             style={calendarStyles.iconButton}

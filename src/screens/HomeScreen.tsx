@@ -1,4 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity, ScrollView, Alert, Modal } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, ScrollView, Modal } from "react-native";
 import { useContext, useState } from "react";
 import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
@@ -6,6 +6,7 @@ import { AuthContext } from "../context/AuthContext";
 import EventCard from "../components/EventCard";
 import { createHomeStyles } from "../styles/HomeScreenStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { useModal } from "../context/ModalContext";
 
 export default function HomeScreen({ navigation }: any) {
   const { visibleEvents, updateEventStatus } = useContext(EventContext);
@@ -15,6 +16,7 @@ export default function HomeScreen({ navigation }: any) {
   const isAdmin = currentUser?.role === "admin";
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "completed">("all");
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const { showConfirm } = useModal();
   
   const dashboardEvents = visibleEvents.filter((event) => event.status !== "cancelled");
   
@@ -25,24 +27,14 @@ export default function HomeScreen({ navigation }: any) {
   });
 
   const handleDeleteEvent = (id: string, eventName: string) => {
-    Alert.alert(
-      "Cancel Booking",
-      `Are you sure you want to cancel the booking for "${eventName}"?`,
-      [
-        {
-          text: "Keep",
-          onPress: () => {},
-          style: "cancel",
-        },
-        {
-          text: "Cancel Booking",
-          onPress: () => {
-            updateEventStatus(id, "cancelled");
-          },
-          style: "destructive",
-        },
-      ]
-    );
+    showConfirm({
+      title: "Cancel Booking",
+      message: `Are you sure you want to cancel the booking for "${eventName}"?`,
+      cancelText: "Keep",
+      confirmText: "Cancel Booking",
+      confirmVariant: "danger",
+      onConfirm: () => updateEventStatus(id, "cancelled"),
+    });
   };
 
   const formatBookingDetails = (event: (typeof dashboardEvents)[number]) => {
@@ -79,18 +71,14 @@ export default function HomeScreen({ navigation }: any) {
     if (!event) return;
 
     const actionLabel = status === "confirmed" ? "Confirm Booking" : "Cancel Booking";
-    Alert.alert(
-      actionLabel,
-      `${formatBookingDetails(event)}\n\nDo you want to ${status === "confirmed" ? "confirm" : "cancel"} this booking?`,
-      [
-        { text: "Review Again", style: "cancel" },
-        {
-          text: actionLabel,
-          style: status === "cancelled" ? "destructive" : "default",
-          onPress: () => updateEventStatus(id, status),
-        },
-      ]
-    );
+    showConfirm({
+      title: actionLabel,
+      message: `${formatBookingDetails(event)}\n\nDo you want to ${status === "confirmed" ? "confirm" : "cancel"} this booking?`,
+      cancelText: "Review Again",
+      confirmText: actionLabel,
+      confirmVariant: status === "cancelled" ? "danger" : "primary",
+      onConfirm: () => updateEventStatus(id, status),
+    });
   };
 
   return (
@@ -130,6 +118,8 @@ export default function HomeScreen({ navigation }: any) {
             justifyContent: "center",
             alignItems: "center",
           }}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
         >
           <View style={homeStyles.emptyContainer}>
             <MaterialCommunityIcons
@@ -148,6 +138,8 @@ export default function HomeScreen({ navigation }: any) {
         <FlatList
           data={filteredEvents}
           keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           contentContainerStyle={homeStyles.listContent}
           renderItem={({ item }) => (
             <EventCard

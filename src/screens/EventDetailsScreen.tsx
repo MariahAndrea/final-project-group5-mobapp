@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Alert, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useContext } from "react";
 import { EventContext } from "../context/EventContext";
 import { ThemeContext } from "../context/ThemeContext";
@@ -6,6 +6,7 @@ import { AuthContext } from "../context/AuthContext";
 import { createDetailsStyles } from "../styles/EventDetailsStyles";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { getStatusColor } from "../styles/statusColors";
+import { useModal } from "../context/ModalContext";
 
 export default function EventDetailsScreen({ route, navigation }: any) {
   const { id } = route.params;
@@ -14,29 +15,30 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   const { theme } = useContext(ThemeContext);
   const detailsStyles = createDetailsStyles(theme);
   const isAdmin = currentUser?.role === "admin";
+  const { showConfirm, showSuccess } = useModal();
+
+  const safeGoBack = () => {
+    if (navigation && typeof navigation.canGoBack === "function" && navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate("Home");
+    }
+  };
 
   const event = events.find((e) => e.id === id);
 
   const handleDeleteEvent = () => {
-    Alert.alert(
-      "Cancel Booking",
-      `Are you sure you want to cancel the booking for "${event?.name}"?`,
-      [
-        {
-          text: "Keep",
-          onPress: () => {},
-          style: "cancel",
-        },
-        {
-          text: "Cancel Booking",
-          onPress: () => {
-            updateEventStatus(id, "cancelled");
-            navigation.goBack();
-          },
-          style: "destructive",
-        },
-      ]
-    );
+    showConfirm({
+      title: "Cancel Booking",
+      message: `Are you sure you want to cancel the booking for "${event?.name}"?`,
+      cancelText: "Keep",
+      confirmText: "Cancel Booking",
+      confirmVariant: "danger",
+      onConfirm: () => {
+        updateEventStatus(id, "cancelled");
+        showSuccess("Booking Canceled", "The booking has been canceled.", safeGoBack);
+      },
+    });
   };
 
   if (!event) return null;
@@ -105,28 +107,31 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   const confirmAdminStatusChange = (status: "confirmed" | "cancelled") => {
     const actionLabel = status === "confirmed" ? "Confirm Booking" : "Cancel Booking";
 
-    Alert.alert(
-      actionLabel,
-      `${bookingDetails}\n\nDo you want to ${status === "confirmed" ? "confirm" : "cancel"} this booking?`,
-      [
-        { text: "Review Again", style: "cancel" },
-        {
-          text: actionLabel,
-          style: status === "cancelled" ? "destructive" : "default",
-          onPress: () => updateEventStatus(id, status),
-        },
-      ]
-    );
+    showConfirm({
+      title: actionLabel,
+      message: `${bookingDetails}\n\nDo you want to ${status === "confirmed" ? "confirm" : "cancel"} this booking?`,
+      cancelText: "Review Again",
+      confirmText: actionLabel,
+      confirmVariant: status === "cancelled" ? "danger" : "primary",
+      onConfirm: () => {
+        updateEventStatus(id, status);
+        if (status === "cancelled") {
+          showSuccess("Booking Canceled", "The booking has been canceled.", safeGoBack);
+        }
+      },
+    });
   };
 
   return (
     <ScrollView
       style={detailsStyles.container}
       contentContainerStyle={detailsStyles.contentContainer}
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <Text style={detailsStyles.header} numberOfLines={2}>Event Details</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => safeGoBack()}>
           <MaterialCommunityIcons name="close" size={28} color={theme.text} />
         </TouchableOpacity>
       </View>

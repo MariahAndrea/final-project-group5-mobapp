@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
-import { Alert } from "react-native";
+import { useModal } from "./ModalContext";
 import { Event } from "../types/Event";
 import { AuthContext } from "./AuthContext";
 
@@ -44,6 +44,7 @@ export const EventProvider = ({ children }: { children: ReactNode }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const { currentUser } = useContext(AuthContext);
+  const { showAlert } = useModal();
 
   useEffect(() => {
     const hydrate = async () => {
@@ -101,7 +102,7 @@ export const EventProvider = ({ children }: { children: ReactNode }) => {
         : null;
 
       if (conflict) {
-        Alert.alert("Date Unavailable", `This venue and time are already confirmed for "${conflict.name}".`);
+        showAlert("Date Unavailable", `This venue and time are already confirmed for "${conflict.name}".`);
         return;
       }
     }
