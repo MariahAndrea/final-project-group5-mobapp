@@ -17,16 +17,17 @@ export const createCardStyles = (theme: Theme) =>
       shadowRadius: 12,
       elevation: 2,
     },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
     title: {
       fontSize: 18,
       fontWeight: "800",
       color: theme.text,
       marginBottom: 6,
-    },
-    subtitle: {
-      fontSize: 14,
-      color: theme.textSecondary,
-      marginBottom: 8,
     },
     meta: {
       fontSize: 12,
@@ -34,10 +35,11 @@ export const createCardStyles = (theme: Theme) =>
       fontWeight: "700",
     },
     detailsContainer: {
+      gap: 8,
+    },
+    detailRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      marginTop: 12,
     },
     details: {
       fontSize: 13,

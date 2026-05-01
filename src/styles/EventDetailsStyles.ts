@@ -65,6 +65,12 @@ export const createDetailsStyles = (theme: Theme) =>
       shadowRadius: 16,
       elevation: 3,
     },
+    heroCardTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 12,
+    },
     heroIcon: {
       width: 46,
       height: 46,
@@ -75,12 +81,10 @@ export const createDetailsStyles = (theme: Theme) =>
       marginBottom: 14,
     },
     statusPill: {
-      alignSelf: "flex-start",
       borderWidth: 1,
       borderRadius: 8,
       paddingHorizontal: 10,
       paddingVertical: 6,
-      marginTop: 12,
     },
     statusPillText: {
       fontSize: 12,
