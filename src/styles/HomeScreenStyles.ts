@@ -198,7 +198,7 @@ export const createHomeStyles = (theme: Theme) =>
       paddingHorizontal: 16,
       paddingVertical: 8,
       paddingBottom: 96,
-      paddingTop: 2,
+      paddingTop: 0,
     },
     bookingTrackerCapsule: {
       backgroundColor: theme.primarySoft,
@@ -219,7 +219,8 @@ export const createHomeStyles = (theme: Theme) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      paddingTop: 13,
+      paddingTop: 8,
+      paddingBottom: 0,
     },
     searchInputContainer: {
       flex: 1,
@@ -229,7 +230,7 @@ export const createHomeStyles = (theme: Theme) =>
       borderRadius: 12,
       borderWidth: 1,
       borderColor: theme.border,
-      paddingHorizontal: 12,
+      paddingHorizontal: 13,
     },
     searchInput: {
       flex: 1,
